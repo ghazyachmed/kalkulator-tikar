@@ -12,6 +12,7 @@ export class QuoteService {
   constructor(priceBook=catalog){this.priceBook=priceBook;}
   calculate(input){
     const order={...defaultOrder,...input};
+    if(order.shipping==='courier')order.shipping='cargo';
     inList(order.product,['tikar','karpet'],'Produk');inList(order.mode,['roll','room'],'Mode');inList(order.width,[95,120],'Lebar');inList(order.color,['hijau','krem','biru','marun'],'Warna');inList(order.packing,['standard','extra'],'Packing');inList(order.shipping,['pickup','courier','cargo'],'Pengiriman');inList(order.cargoService,['land','sea','air'],'Layanan cargo');
     if(typeof order.writing!=='boolean'||typeof order.trim!=='boolean')throw new Error('Pilihan tambahan tidak valid.');
     if(!Number.isInteger(order.quantity)||order.quantity<1||order.quantity>10000)throw new Error('Jumlah harus 1–10.000 rol.');
@@ -29,7 +30,7 @@ export class QuoteService {
     return {order,version:this.priceBook.version,strips,meters:metersCm/100,area:metersCm*order.width/10000,trimMeters:(2*(order.width+(order.mode==='room'?roomLengthCm:lengthCm))*strips)/100,rate:rate??null,rateSource,subtotal,shippingCost,shippingSource:order.shipping==='pickup'?'pickup':shippingCost===null?'unknown':'manual',total:isFinal?subtotal+shippingCost:null,isFinal,pending,words:subtotal===null?null:toWords(isFinal?subtotal+shippingCost:subtotal)};
   }
 }
-export const rupiah=value=>value===null?'Perlu konfirmasi':new Intl.NumberFormat('id-ID',{style:'currency',currency:'IDR',maximumFractionDigits:0}).format(value);
+export const rupiah=value=>value===null?'Harga belum tersedia':new Intl.NumberFormat('id-ID',{style:'currency',currency:'IDR',maximumFractionDigits:0}).format(value);
 export function toWords(amount){
   if(!Number.isSafeInteger(amount)||amount<0||amount>=1000000000000)throw new Error('Nominal tidak valid.');
   const digits=['','satu','dua','tiga','empat','lima','enam','tujuh','delapan','sembilan','sepuluh','sebelas'];

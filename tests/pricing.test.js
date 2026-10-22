@@ -20,3 +20,5 @@ test('Benchmark 95 cm memakai Rp25.500 per meter dan provenance eksplisit',()=>{
 test('Tulisan 95 cm memakai asumsi surcharge yang ditandai',()=>{const q=engine.calculate({...defaultOrder,width:95,writing:true,length:10});assert.equal(q.total,285000);assert.equal(q.rateSource.kind,'assumption');});
 test('Tikar lipat dikeluarkan dari kalkulator custom',()=>assert.throws(()=>engine.calculate({...defaultOrder,product:'lipat'})));
 test('Layanan cargo pada tautan berbagi divalidasi',()=>assert.throws(()=>engine.calculate({...defaultOrder,cargoService:'fake'})));
+
+test('Tautan kurir lama memakai pengiriman Indah yang sama',()=>{const q=engine.calculate({...defaultOrder,shipping:'courier',shippingCost:45000});assert.equal(q.order.shipping,'cargo');assert.equal(q.total,395000);});

@@ -42,3 +42,7 @@ API Gemini live (belum ada secret), tarif Indah live via API, tarif 95 cm/produk
 Lighthouse revisi kedua (`lighthouse-v2.report.html/json`): Performance 97, Accessibility 100, Best Practices 100, SEO 100; LCP 2,2 detik, CLS 0, TBT 0 ms. Ini menggantikan hasil versi awal sebagai verifikasi antarmuka terbaru. Dialog chat juga diperiksa pada ponsel; pengujian Lighthouse di atas menggunakan halaman saat dialog tertutup.
 
 Foto hijau dan marun berasal dari katalog resmi Toko Santri, disalin ke origin sendiri lalu dikompresi. URL modul/CSS memakai hash versi untuk mencegah cache aset lama tercampur versi HTML baru. Pengujian browser menangkap kondisi cache lama selama pengembangan dan perbaikan hash memastikan revisi baru dimuat bersama.
+
+## Revisi 23 Oktober 2026
+
+Pengiriman disatukan menjadi ambil di toko atau Indah Cargo; tautan lama courier dimigrasikan ke cargo. Urutan DOM dan layar HP: formulir, hasil, ilustrasi, chatbot. Tombol hasil memindahkan fokus ke ringkasan. Teks input 16 px dan catatan 14 px. Harga yang belum ada tetap tidak diisi nol. Halaman resmi tarif Indah diperiksa ulang; nominal tarif rute otomatis belum terintegrasi. Uji baru mengamankan tautan lama dan penghapusan ongkir saat ukuran chat berubah. Hasil Lighthouse sebelumnya berlaku untuk versi sebelumnya, bukan revisi ini.

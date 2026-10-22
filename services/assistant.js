@@ -29,6 +29,7 @@ export class AssistantService {
     }
     let answer;let order;
     if(intent==='quote'){
+      if(['length','quantity','width','mode'].some(key=>Object.hasOwn(patch,key)&&patch[key]!==context[key]))patch.shippingCost=null;
       try{const q=this.quoteService.calculate({...context,...patch});order=q.order;answer=q.subtotal===null?'Harga varian ini belum tersedia. Silakan konfirmasi ke Toko Santri.':`${q.strips} rol/lajur × ${q.meters/q.strips} meter × ${rupiah(q.rate)} = ${rupiah(q.subtotal)}. ${q.shippingSource==='manual'?'Ditambah ongkir input pelanggan '+rupiah(q.shippingCost)+', estimasi total '+rupiah(q.total)+'. ':''}Terbilang ${q.total===null?'subtotal':'total'}: ${q.words}. Sumber: ${q.rateSource.label}. ${q.rateSource.kind==='benchmark'||q.rateSource.kind==='assumption'?q.rateSource.note:''} ${q.isFinal?'Ini estimasi, bukan invoice.':q.pending.join(', ')+' masih perlu konfirmasi; angka di atas belum total akhir.'}`;}
       catch(error){answer=error.message;}
      }else if(intent==='shipping'){
