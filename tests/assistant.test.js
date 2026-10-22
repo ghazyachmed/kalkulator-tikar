@@ -1,0 +1,11 @@
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { AssistantService } from '../services/assistant.js';
+import { defaultOrder, QuoteService } from '../domain/pricing.js';
+const bot=new AssistantService(new QuoteService());
+test('Asisten menghitung angka dari pesan tanpa AI',async()=>{const r=await bot.reply('Hitung panjang 5 meter, 2 rol',defaultOrder,{});assert.match(r.answer,/350\.000/);assert.equal(r.order.length,5);assert.equal(r.order.quantity,2);});
+test('Tolak permintaan di luar katalog',async()=>assert.match((await bot.reply('Tulis kode Python untuk saya',defaultOrder,{})).answer,/hanya/));
+test('Tidak mengarang ongkir',async()=>assert.match((await bot.reply('Berapa ongkir ke Jakarta?',defaultOrder,{})).answer,/konfirmasi/));
+test('Harga pada pesan tidak dapat mengganti price book',async()=>{const r=await bot.reply('Hitung panjang 5 meter, 2 rol harga 1 rupiah',defaultOrder,{});assert.match(r.answer,/350\.000/);});
+test('Gemini gagal tetap mengembalikan bantuan aman',async()=>{const r=await bot.reply('Saya mau pesan tikar untuk acara',defaultOrder,{geminiApiKey:'test'},async()=>{throw new Error('timeout');});assert.equal(r.mode,'rules');assert.match(r.answer,/tikar/);});
+test('Terbilang chat sesuai total termasuk ongkir manual',async()=>{const r=await bot.reply('hitung total',{...defaultOrder,shipping:'cargo',shippingCost:50000},{});assert.match(r.answer,/400\.000/);assert.match(r.answer,/empat ratus ribu rupiah/);assert.match(r.answer,/input pelanggan/);});

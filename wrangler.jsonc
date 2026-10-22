@@ -1,0 +1,14 @@
+{
+  "name": "toko-santri-calculator",
+  "main": "dist/server/index.js",
+  "compatibility_date": "2026-10-22",
+  "build": {"command": "npm run build"},
+  "assets": {
+    "directory": "public",
+    "binding": "ASSETS",
+    "run_worker_first": ["/api/*"]
+  },
+  "vars": {"geminiModel": "gemini-2.5-flash-lite"},
+  "ratelimits": [{"name": "chatLimit", "namespace_id": "1001", "simple": {"limit": 5, "period": 60}}],
+  "observability": {"enabled": true, "head_sampling_rate": 0.1}
+}

@@ -1,0 +1,12 @@
+{
+  "name": "toko-santri-calculator",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "test": "node --test tests/*.test.js",
+    "validate": "node scripts/validate-artifact.mjs",
+    "dev": "node scripts/preview.mjs"
+  },
+  "engines": { "node": ">=22" }
+}
