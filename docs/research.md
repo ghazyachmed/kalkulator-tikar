@@ -20,3 +20,13 @@ Diperiksa 22 Oktober 2026. Harga hasil pencarian tidak otomatis menjadi harga to
 ## Keputusan
 
 Tarif publik terkini untuk keseluruhan produk Toko Santri belum ditemukan. Lebih tepat menampilkan status konfirmasi daripada memakai arsip 2012, promosi marketplace yang berbeda SKU, atau harga kompetitor. Integrasi Indah otomatis ditunda sampai ada akses resmi. Lokasi dimasukkan manual agar tidak memerlukan peta berbayar atau izin geolokasi.
+
+## Revisi Produk
+
+- Halaman produsen https://tikarswan.com/custom-tikar-plastik-swan-brand/ diperiksa langsung lewat Browser: Rp25.500/m untuk lebar 95 cm, panjang custom, minimum 500 m. Dipakai sebagai benchmark eksplisit untuk simulasi, bukan tarif toko. Surcharge tulisan tidak dirinci; tambahan Rp3.000/m merupakan asumsi mengikuti selisih 120 cm dari brief.
+- Katalog produsen https://tikarswan.com/wp-content/uploads/2022/11/Katalog-Produk-Tikar-SWAN-BRAND.pdf terindeks dengan spesifikasi rol 680 × 95 cm, berat 3.000 g. Dipakai untuk rasio massa per luas. Bukan hasil timbang produk Toko Santri.
+- Parameter gulungan/packing lain merupakan asumsi model: tebal 1,2 mm, diameter inti 4 cm, pelindung diameter 2 cm, allowance panjang 4 cm, massa packing 0,25 kg/paket; bagi panjang per 20 m. Tidak ada sumber yang mengonfirmasi parameter ini sebagai standar packing Toko Santri.
+- Foto hijau: https://tokosantri.co.id/wp-content/uploads/2018/11/IMG_20170711_140544.jpg ; foto marun: https://tokosantri.co.id/wp-content/uploads/2018/11/IMG_20180128_111334.jpg . Keduanya terlihat pada katalog resmi, diunduh melalui Browser dan hanya diperkecil/dikompresi; tidak diubah motif/tulisannya. Foto diberi label contoh pesanan, tidak mengasumsikan warna/motif stok.
+- Tikar lipat dikeluarkan dari kalkulator custom sesuai arahan pengguna. Tautan lama dengan produk lipat ditolak lalu memakai konfigurasi awal.
+
+Keputusan revisi ini menggantikan keputusan sebelumnya yang menonaktifkan harga 95 cm; pengguna kini mengizinkan penggunaan benchmark luar dengan label sumber.

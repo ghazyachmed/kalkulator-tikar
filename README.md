@@ -31,7 +31,8 @@ Ubah `domain/pricing.js`, tambahkan tes sebelum perubahan, naikkan `catalog.vers
 
 - 120 cm: Rp35.000 tanpa tulisan, Rp38.000 dengan tulisan dari brief pemilik.
 - Satuan **diasumsikan per meter panjang**, masih perlu konfirmasi pemilik.
-- 95 cm, karpet, tikar lipat, plisir, dan packing tambahan belum ada tarif tervalidasi.
+- 95 cm: benchmark produsen Swan Rp25.500/m dengan minimum pada sumber 500 m. Untuk tulisan, simulasi Rp28.500/m memakai asumsi tambahan Rp3.000, bukan tarif resmi Swan/Toko Santri.
+- Karpet, plisir, dan packing tambahan belum ada tarif tervalidasi. Tikar lipat dikeluarkan karena ukurannya tetap.
 - Ongkir manual diberi label input pelanggan, tidak menjadi tarif resmi. Nol hanya sah jika benar ada penawaran tanpa ongkir.
 - Seluruh hasil estimasi, bukan invoice. Jika komponen belum diketahui, total akhir tidak ditampilkan.
 
@@ -47,13 +48,13 @@ npx wrangler secret put geminiApiKey
 
 Gunakan proyek Google AI Studio free tier tanpa billing. Secret saja tidak cukup: binding `chatLimit` wajib tersedia, jika tidak server tetap memakai aturan. Model default `gemini-2.5-flash-lite`; cek ketersediaan dan kuota akun sebelum mengaktifkan.
 
-Gemini hanya mengklasifikasi intent ke enum yang diizinkan. Teks keluaran model tidak ditampilkan. Semua angka, tarif, dan jawaban berasal dari template dan `QuoteService`. Permintaan dibatasi 800 karakter, body 4 KB, output 120 token, timeout 4,5 detik, tanpa retry otomatis. Pertanyaan yang dipahami aturan tidak memanggil Gemini. Jika provider gagal, kalkulator dan asisten aturan tetap bekerja.
+Gemini hanya mengklasifikasi intent ke enum yang diizinkan. Teks keluaran model tidak ditampilkan. Semua angka dan tarif berasal dari `QuoteService`/`ShippingService`, jawaban memakai template. Benchmark dan asumsi dinyatakan dalam jawaban. Permintaan dibatasi 800 karakter, body 4 KB, output 120 token, timeout 4,5 detik, tanpa retry otomatis. Pertanyaan yang dipahami aturan tidak memanggil Gemini. Jika provider gagal, kalkulator dan asisten aturan tetap bekerja.
 
 Rate limit Cloudflare bersifat per lokasi jaringan, bukan batas global tagihan. Token bucket memori juga hanya per isolate. Jangan menganggap keduanya sebagai kuota global. Kuota provider free tier dan status billing harus diperiksa pemilik. Jangan kirim alamat atau data pribadi melalui chat; lokasi pengiriman hanya dimasukkan ke pesan WhatsApp setelah pelanggan memilih tombol pesan.
 
 ## Indah Cargo
 
-Lokasi manual disertakan ke draft WhatsApp. Rumus volume resmi ditampilkan pada bantuan: darat/laut `P×L×T/5000`, udara `/6000`, dalam cm. Berat terbesar adalah acuan, bukan keputusan berat tagihan. Minimum layanan, pembulatan, asuransi, surcharge, dan penawaran akhir ditentukan Indah.
+Lokasi manual disertakan ke draft WhatsApp. Berat dan dimensi paket diperkirakan otomatis dari ukuran/jumlah rol; pelanggan tidak diminta mengisi berat. Basis massa benchmark katalog Swan 3 kg/6,8 × 0,95 m. Tebal 1,2 mm, inti 4 cm, pelindung 2 cm, allowance panjang 4 cm, packing 0,25 kg, dan pembagian tiap 20 m adalah asumsi, bukan spesifikasi terverifikasi Toko Santri. Model menghasilkan maksimum dua kelompok paket sehingga pesanan besar tidak membuat ribuan objek. Rumus volume resmi ditampilkan pada bantuan: darat/laut `P×L×T/5000`, udara `/6000`, dalam cm. Berat terbesar adalah acuan, bukan keputusan berat tagihan. Minimum layanan, pembulatan, asuransi, surcharge, dan penawaran akhir ditentukan Indah.
 
 Dokumentasi API publik resmi belum ditemukan. Versi ini menyediakan tautan cek tarif resmi dan input nominal hasil penawaran; **tidak mengklaim tarif otomatis**. Tidak memakai scraping endpoint internal atau tarif per km buatan. Integrasi otomatis memerlukan dokumentasi/akses resmi atau agregator yang mendukung layanan Indah dan izin pemilik untuk biaya layanan.
 

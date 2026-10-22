@@ -13,7 +13,7 @@ Opsional: konfigurasi valid → `/api/quotes` → Queue → consumer → R2. Tid
 | Bagian | Tanggung Jawab |
 | --- | --- |
 | `domain/pricing.js` | Validasi, katalog versi, harga, kebutuhan rol/lajur, keliling plisir, rupiah, terbilang. |
-| `domain/shipping.js` | Berat aktual/volume paket, tanpa tarif buatan. |
+| `domain/shipping.js` | Model otomatis massa/diameter gulungan dari pesanan dan benchmark berat, tanpa tarif ongkir buatan. |
 | `services/assistant.js` | Intent, adapter Gemini melalui dependency injection fetch, jawaban template. |
 | `services/security.js` | Header keamanan, streaming body cap, token bucket memori dengan eviction. |
 | `services/events.js` | Antrean dan object storage opsional, ack/retry, kunci idempoten. |
@@ -48,3 +48,7 @@ Pantau status provider, 429/5xx, p95 durasi, fallback Gemini, kuota Worker/AI, d
 ## Verifikasi
 
 Tes ditulis sebelum fitur inti: harga, unknown fees, ongkir manual, assistant, validasi server, volumetrik. Token bucket, input stream, dan consumer juga diuji. Pengujian browser mencakup nominal dan terbilang, konfigurasi tulisan/ongkir, varian tanpa harga, dan respons ponsel. Hasil Lighthouse disimpan terpisah; hasil lokal bukan jaminan performa produksi atau lapangan. Pengujian beban publik belum dilakukan.
+
+## Revisi Antarmuka
+
+Foto asli disajikan dari origin sendiri, bukan hotlink. Build memberi versi hash pada URL CSS dan modul browser agar pembaruan tidak tercampur cache versi lama. Chat tampil di atas ringkasan dan dapat dibuka sebagai dialog aksesibel dari tombol tetap; node percakapan dipindah tanpa menduplikasi state. Dialog mengembalikan fokus, mendukung Escape, dan input chat mendukung Enter/Shift+Enter. Pilihan layanan cargo disimpan dalam tautan. Perubahan ukuran/tujuan mengosongkan ongkir manual agar tarif rute/paket lama tidak diam-diam dipakai lagi.

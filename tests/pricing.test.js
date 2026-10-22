@@ -7,7 +7,7 @@ test('120 cm: 10 meter × 2 rol = Rp700.000', () => {
   assert.equal(q.subtotal,700000); assert.equal(q.total,700000); assert.equal(q.isFinal,true);
 });
 test('Tulisan memakai tarif Rp38.000', () => assert.equal(engine.calculate({...defaultOrder, writing:true, length:10, quantity:2}).total,760000));
-test('Lebar 95 cm tidak mewarisi harga 120 cm', () => { const q=engine.calculate({...defaultOrder,width:95}); assert.equal(q.total,null); assert.equal(q.isFinal,false); });
+test('Lebar 95 cm tidak mewarisi harga 120 cm',()=>assert.equal(engine.calculate({...defaultOrder,width:95}).rate,25500));
 test('Ongkir dan plisir yang belum diketahui tidak dianggap gratis', () => {const q=engine.calculate({...defaultOrder,trim:true,shipping:'cargo'}); assert.equal(q.isFinal,false); assert.equal(q.total,null); assert.ok(q.pending.includes('Plisir'));});
 test('Kebutuhan ruangan membulatkan jumlah lajur ke atas', () => {const q=engine.calculate({...defaultOrder,mode:'room',roomWidth:5,roomLength:10});assert.equal(q.strips,5);assert.equal(q.meters,50);assert.equal(q.total,1750000);});
 test('Desimal tepat sampai sentimeter', () => assert.equal(engine.calculate({...defaultOrder,length:1.11,quantity:3}).total,116550));
@@ -16,3 +16,7 @@ test('Produk lain belum diberi harga palsu',()=>assert.equal(engine.calculate({.
 test('Terbilang hingga miliar, nol dan bilangan tidak sah',()=>{assert.equal(toWords(760000),'tujuh ratus enam puluh ribu rupiah');assert.equal(toWords(1000000),'satu juta rupiah');assert.equal(toWords(0),'nol rupiah');assert.throws(()=>toWords(-1));});
 test('Ongkir manual masuk estimasi dan ditandai sumbernya',()=>{const q=engine.calculate({...defaultOrder,shipping:'cargo',shippingCost:50000});assert.equal(q.total,400000);assert.equal(q.shippingSource,'manual');});
 test('Ongkir tidak sah ditolak',()=>{for(const shippingCost of [-1,Infinity,1.5,'50000'])assert.throws(()=>engine.calculate({...defaultOrder,shipping:'cargo',shippingCost}));});
+test('Benchmark 95 cm memakai Rp25.500 per meter dan provenance eksplisit',()=>{const q=engine.calculate({...defaultOrder,width:95,length:10});assert.equal(q.total,255000);assert.equal(q.rateSource.kind,'benchmark');assert.equal(q.rateSource.minimumMeters,500);});
+test('Tulisan 95 cm memakai asumsi surcharge yang ditandai',()=>{const q=engine.calculate({...defaultOrder,width:95,writing:true,length:10});assert.equal(q.total,285000);assert.equal(q.rateSource.kind,'assumption');});
+test('Tikar lipat dikeluarkan dari kalkulator custom',()=>assert.throws(()=>engine.calculate({...defaultOrder,product:'lipat'})));
+test('Layanan cargo pada tautan berbagi divalidasi',()=>assert.throws(()=>engine.calculate({...defaultOrder,cargoService:'fake'})));

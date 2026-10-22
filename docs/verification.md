@@ -34,3 +34,11 @@ Laporan HTML dan JSON ada di folder ini. Pengujian pertama menemukan kontras tek
 ## Belum Terverifikasi
 
 API Gemini live (belum ada secret), tarif Indah live via API, tarif 95 cm/produk lain/tambahan, deployment ke akun Cloudflare/Vercel milik pengguna, alarm/WAF khusus, R2/Queue produksi, dan load test lintas wilayah. Fitur simpan online opsional tidak ditampilkan sebagai fitur aktif.
+
+## Revisi Kedua
+
+41 tes lulus. Tikar lipat dihapus, harga 95 cm memakai benchmark Swan dengan label sumber, dan berat/ukuran paket dihitung otomatis. Browser desktop dan ponsel 390×844 memverifikasi dialog chat, tombol kirim, perhitungan Rp510.000 untuk 95 cm × 10 m × 2 rol, serta estimasi satu paket 95 cm × 10 m: sekitar 4,66 kg dengan packing dan 4,46 kg volume darat. Angka tersebut model benchmark, bukan hasil timbang.
+
+Lighthouse revisi kedua (`lighthouse-v2.report.html/json`): Performance 97, Accessibility 100, Best Practices 100, SEO 100; LCP 2,2 detik, CLS 0, TBT 0 ms. Ini menggantikan hasil versi awal sebagai verifikasi antarmuka terbaru. Dialog chat juga diperiksa pada ponsel; pengujian Lighthouse di atas menggunakan halaman saat dialog tertutup.
+
+Foto hijau dan marun berasal dari katalog resmi Toko Santri, disalin ke origin sendiri lalu dikompresi. URL modul/CSS memakai hash versi untuk mencegah cache aset lama tercampur versi HTML baru. Pengujian browser menangkap kondisi cache lama selama pengembangan dan perbaikan hash memastikan revisi baru dimuat bersama.

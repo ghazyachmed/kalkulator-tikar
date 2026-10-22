@@ -40,7 +40,7 @@ export default {
       if(!asset)return new Response('Halaman tidak ditemukan.',{status:404,headers:securityHeaders});
       const headers={...securityHeaders,'content-type':asset.type,'cache-control':'public, max-age=0, s-maxage=3600, stale-while-revalidate=86400','etag':asset.etag};
       if(request.headers.get('if-none-match')===asset.etag)return new Response(null,{status:304,headers});
-      return new Response(request.method==='HEAD'?null:asset.body,{headers});
+      return new Response(request.method==='HEAD'?null:asset.base64?Uint8Array.from(atob(asset.body),character=>character.charCodeAt(0)):asset.body,{headers});
     }catch{return json({error:'Layanan sedang sibuk. Kalkulator tetap bisa digunakan.',requestId:id},503);}
     finally{if(url.pathname.startsWith('/api/'))console.log(JSON.stringify({event:'request',requestId:id,path:url.pathname,durationMs:Date.now()-start}));}
   },
