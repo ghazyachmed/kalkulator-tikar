@@ -1,6 +1,6 @@
 import { ShippingService } from '/shipping.js';
 import { QuoteService, defaultOrder, catalog, rupiah } from '/domain.js';
-import { AssistantService } from '/assistant.js';
+import { AssistantService, bookingLink } from '/assistant.js';
 const select=id=>document.getElementById(id);
 const quoteService=new QuoteService();
 const localAssistant=new AssistantService(quoteService);
@@ -75,6 +75,7 @@ async function ask(message){
     if(result.choices?.length){const choices=document.createElement('div');choices.className='replyChoices';for(const item of result.choices){const button=document.createElement('button');button.type='button';button.textContent=item.label;button.addEventListener('click',()=>ask(item.message));choices.append(button);}pending.append(choices);}
     select('chatMode').textContent=result.mode==='gemini'?'Dibantu Gemini · Hitungan dari kalkulator':'Asisten berbasis aturan · Hitungan dari kalkulator';
     select('chatStatus').textContent=result.fallback?'Koneksi lambat atau tidak tersedia. Bantuan dasar tetap aktif.':'Jawaban siap.';
+    if(result.order||result.contact){const link=document.createElement('a');link.className='chatBooking';link.textContent=result.order?'Lanjut pesan di WhatsApp ↗':'Hubungi admin di WhatsApp ↗';link.href=bookingLink(result.order?quoteService.calculate(result.order):null,select('destination').value);link.target='_blank';link.rel='noopener noreferrer';const note=document.createElement('span');note.className='bookingNote';note.textContent='Kirim pesan di WhatsApp untuk melanjutkan pemesanan.';pending.append(link,note);}
     if(result.order){const apply=document.createElement('button');apply.type='button';apply.className='applyQuote';apply.textContent='Terapkan ke kalkulator ↗';apply.addEventListener('click',()=>{order=quoteService.calculate(result.order).order;syncFields();update();if(chatDialog.open){chatOpener=select('quoteResult');chatDialog.close();}select('quoteResult').scrollIntoView({behavior:'smooth',block:'start'});select('quoteResult').focus({preventScroll:true});toast('Hitungan diperbarui.');});pending.append(document.createElement('br'),apply);}
   }catch{pending.textContent='Asisten sedang tidak tersedia. Anda tetap bisa menghitung di kalkulator atau menghubungi toko.';select('chatStatus').textContent='Silakan coba lagi.';}finally{clearTimeout(slowTimer);pending.classList.remove('loadingBubble');chatBusy=false;select('sendChat').disabled=false;select('sendChat').textContent='Kirim ➤';select('chatForm').setAttribute('aria-busy','false');document.querySelectorAll('[data-question]').forEach(button=>button.disabled=false);select('chatMessages').scrollTop=select('chatMessages').scrollHeight;}
 }

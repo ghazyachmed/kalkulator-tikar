@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { AssistantService } from '../services/assistant.js';
+import { AssistantService, bookingLink } from '../services/assistant.js';
 import { defaultOrder, QuoteService } from '../domain/pricing.js';
 const bot=new AssistantService(new QuoteService());
 test('Asisten menghitung angka dari pesan tanpa AI',async()=>{const r=await bot.reply('Hitung lebar 120 cm panjang 5 meter, 2 rol',defaultOrder,{});assert.match(r.answer,/350\.000/);assert.equal(r.order.length,5);assert.equal(r.order.quantity,2);});
@@ -27,3 +27,10 @@ test('Ukuran nol dan tiga dimensi tidak menghasilkan penawaran',async()=>{for(co
 
 test('Warna saat memilih lebar tidak menghapus ukuran yang menunggu',async()=>{const first=await bot.reply('musholla 30x10',defaultOrder);const color=await bot.reply('warna biru',defaultOrder,{},fetch,first.conversation);assert.equal(color.order,undefined);const last=await bot.reply('95',defaultOrder,{},fetch,color.conversation);assert.equal(last.order.roomLength,30);assert.equal(last.order.width,95);assert.equal(last.order.color,'biru');});
 test('Panjang rol tanpa lebar ditanyakan sebelum dihitung',async()=>{const r=await bot.reply('panjang 5 meter, 2 rol',defaultOrder);assert.equal(r.order,undefined);assert.equal(r.conversation.awaitingWidth,true);});
+
+test('Booking meneruskan hitungan terakhir, bukan pilihan awal',async()=>{const q=await bot.reply('musholla 30x10 warna biru tikar 95 cm',defaultOrder);const r=await bot.reply('mau booking',q.order,{},fetch,q.conversation);assert.equal(r.handled,true);assert.equal(r.order.roomLength,30);assert.equal(r.order.width,95);assert.match(r.answer,/WhatsApp/);});
+test('Booking saat lebar belum dipilih tetap meminta pilihan',async()=>{const first=await bot.reply('musholla 30x10',defaultOrder);const r=await bot.reply('mau pesan',defaultOrder,{},fetch,first.conversation);assert.equal(r.order,undefined);assert.equal(r.conversation.awaitingWidth,true);assert.equal(r.choices.length,2);});
+test('Booking tanpa hitungan menawarkan admin tanpa pesanan contoh',async()=>{const r=await bot.reply('hubungi admin',defaultOrder);assert.equal(r.order,undefined);assert.equal(r.contact,true);assert.equal(r.handled,true);});
+
+test('Pesan WA membawa ukuran, biaya belum diketahui dan tujuan dengan encoding aman',()=>{const q=new QuoteService().calculate({...defaultOrder,mode:'room',roomLength:30,roomWidth:10,width:95,color:'biru',shipping:'cargo',packing:'extra'});const url=new URL(bookingLink(q,'Bogor & Depok'));assert.equal(url.hostname,'wa.me');const message=url.searchParams.get('text');assert.match(message,/30 × 10 m/);assert.match(message,/biru, lebar 95 cm/);assert.match(message,/Biaya diketahui/);assert.match(message,/Ongkir: Belum diketahui/);assert.match(message,/Bogor & Depok/);assert.match(message,/Packing: Biaya belum diketahui/);});
+test('Kontak tanpa quote tidak membawa ukuran contoh',()=>{const message=new URL(bookingLink(null)).searchParams.get('text');assert.doesNotMatch(message,/rol\/lajur|Estimasi total/);});

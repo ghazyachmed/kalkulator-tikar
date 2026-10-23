@@ -42,6 +42,11 @@ export class AssistantService {
       intent='quote';
     }
     else if(conversation.awaitingWidth&&!widthChoice&&color){return {answer:'Warna '+color[1]+' saya catat. Mau lebar 95 cm atau 120 cm?',mode,handled:true,conversation:{...conversation,draft:{...conversation.draft,...patch}},choices:[{label:'Lebar 95 cm',message:'Pilih lebar 95 cm'},{label:'Lebar 120 cm',message:'Pilih lebar 120 cm'}]};}
+    else if(/\b(book(?:ing)?|pesan|order|beli|whatsapp|wa|admin)\b/.test(text)){
+      if(conversation.awaitingWidth)return {answer:'Sebelum lanjut pesan, mau lebar 95 cm atau 120 cm?',mode,handled:true,conversation,choices:[{label:'Lebar 95 cm',message:'Pilih lebar 95 cm'},{label:'Lebar 120 cm',message:'Pilih lebar 120 cm'}]};
+      if(conversation.widthConfirmed)return {answer:'Silakan lanjut lewat tombol WhatsApp di bawah. Rincian hitungan terakhir ikut terisi. Kirim pesannya untuk meminta pemesanan; stok dan ongkir akan dicek admin.',mode,handled:true,order:this.quoteService.calculate(context).order,conversation};
+      return {answer:'Bisa. Hubungi admin lewat WhatsApp, atau hitung kebutuhan tikar terlebih dahulu agar rincian pesanan ikut terisi.',mode,handled:true,contact:true,choices:[{label:'Hitung kebutuhan',message:'Bantu hitung ruangan'}]};
+    }
     else if(discovery&&/ukuran|lebar|tikar/.test(text))intent='sizes';
     else if(/produk|jual apa|pilihan belanja|mulai|halo|ass?alam/.test(text))intent='welcome';
     else if(room)intent='roomGuide';
@@ -85,4 +90,13 @@ export class AssistantService {
     const choices=['welcome','sizes','unknown'].includes(intent)?[{label:'Lihat pilihan tikar',message:'Tikar ada ukuran apa saja?'},{label:'Hitung ruangan',message:'Bantu hitung ruangan'}]:intent==='roomGuide'?[{label:'Lihat pilihan tikar',message:'Tikar ada ukuran apa saja?'}]:[];
     return {answer,mode,handled:intent!=='unknown',choices,...(order?{order,conversation:{widthConfirmed:true}}:{})};
   }
+}
+
+// Dibantu AI: ringkasan pemesanan dari hitungan terverifikasi.
+export function bookingLink(quote,destination=''){
+  const lines=['Assalamu’alaikum, saya ingin pesan tikar Toko Santri.'];
+  if(quote){const q=quote;const o=q.order;lines.push('', 'Tikar rol '+o.color+', lebar '+o.width+' cm', ...(o.mode==='room'?['Ruangan: '+o.roomLength+' × '+o.roomWidth+' m']:[]),q.strips+' rol/lajur × '+q.meters/q.strips+' m','Tulisan: '+(o.writing?'Ya':'Tidak'),'Plisir dua ujung: '+(o.trim?rupiah(q.trimCost):'Tidak'),'Packing: '+(o.packing==='extra'?(q.packingCost===null?'Biaya belum diketahui':rupiah(q.packingCost)+' · '+q.bagCount+' karung'):'Standar'),'Subtotal tikar: '+rupiah(q.subtotal),'Pengiriman: '+(o.shipping==='pickup'?'Ambil di toko':'Indah Cargo'),'Ongkir: '+(q.shippingSource==='pickup'?'Tanpa ongkir':q.shippingSource==='manual'?rupiah(q.shippingCost)+' (input pelanggan, belum diverifikasi)':'Belum diketahui'),(q.total===null?'Biaya diketahui: ':'Estimasi total: ')+rupiah(q.knownTotal),...(q.pending.length?['Belum termasuk: '+q.pending.join(', ')]:[]));}
+  if(destination.trim())lines.push('Tujuan: '+destination.trim());
+  lines.push('','Mohon cek stok, rincian biaya, dan ketersediaan pesanan.');
+  return 'https://wa.me/6285105016189?text='+encodeURIComponent(lines.join('\n'));
 }

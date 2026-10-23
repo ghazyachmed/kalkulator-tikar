@@ -29,3 +29,5 @@ body{font-size:16px;line-height:1.6}.workspace{grid-template-columns:minmax(0,1.
 
 /* Identitas Resmi */
 .officialLogo{display:block;width:270px;height:auto;max-width:100%}.brand{max-width:38%;letter-spacing:normal}.productTabs{grid-template-columns:1fr}@media(max-width:700px){.brand{max-width:64%}.officialLogo{width:245px}header{gap:12px}.contact{padding:9px;font-size:12px}}
+
+.chatBooking{display:flex;align-items:center;justify-content:center;min-height:48px;margin-top:16px;padding:12px 16px;border-radius:12px;background:#164f42;color:#fff;font-size:16px;font-weight:700;text-decoration:none;text-align:center;white-space:normal}.chatBooking:hover{background:#103e34}.chatBooking:focus-visible{outline:3px solid #b58322;outline-offset:3px}.bookingNote{display:block;margin-top:8px;font-size:14px;line-height:1.5;color:#46564e}
