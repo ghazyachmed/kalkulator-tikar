@@ -1,9 +1,9 @@
 // Bantuan AI: Perancangan, implementasi, dan pengujian dibantu Codex.
 export const catalog = Object.freeze({
-  version:'2026-10-22.2',
+  version:'2026-10-23.1',
   products:[{id:'tikar',name:'Tikar rol',unit:'meter',description:'Anyaman plastik • panjang sesuai kebutuhan'},{id:'karpet',name:'Karpet masjid',unit:'meter',description:'Pilihan karpet untuk masjid & musala'}],
-  rates:{'95':{plain:25500,writing:28500},'120':{plain:35000,writing:38000}},
-  source:'Arahan pemilik, 22 Oktober 2026. Asumsi per meter panjang; perlu persetujuan pemilik sebelum transaksi.',
+  rates:{'95':{plain:31000,writing:37000},'120':{plain:35000,writing:38000}},
+  source:'Tarif pemilik Toko Santri, 23 Oktober 2026. Harga per meter panjang.',
 });
 export const defaultOrder = Object.freeze({product:'tikar',mode:'roll',width:120,color:'hijau',length:10,quantity:1,roomWidth:6,roomLength:12,writing:false,trim:false,packing:'standard',shipping:'pickup',shippingCost:null,cargoService:'land'});
 const inList=(value,list,name)=>{if(!list.includes(value))throw new Error(name+' tidak valid.');};
@@ -22,12 +22,18 @@ export class QuoteService {
     const rate=order.product==='tikar'?this.priceBook.rates[order.width]?.[order.writing?'writing':'plain']:null;
     if(order.shippingCost!==null&&(!Number.isSafeInteger(order.shippingCost)||order.shippingCost<0||order.shippingCost>100000000))throw new Error('Ongkir harus rupiah bulat 0–100.000.000.');
     const shippingCost=order.shipping==='pickup'?0:order.shippingCost;
-    const rateSource=order.product!=='tikar'?{kind:'unknown',label:'Menunggu harga toko'}:order.width===95?{kind:order.writing?'assumption':'benchmark',label:order.writing?'Benchmark + asumsi tulisan':'Benchmark produsen Swan',url:'https://tikarswan.com/custom-tikar-plastik-swan-brand/',minimumMeters:500,note:'Bukan tarif resmi Toko Santri. Swan mencantumkan Rp25.500/m dan minimum 500 m. Tambahan tulisan Rp3.000/m adalah asumsi simulasi, bukan tarif Swan.'}:{kind:'owner',label:'Arahan pemilik',note:'Rp35.000/Rp38.000, asumsi per meter panjang. Bukan harga web terverifikasi.'};
+    const rateSource=order.product!=='tikar'?{kind:'unknown',label:'Menunggu harga toko'}:{kind:'owner',label:'Tarif Toko Santri',note:'Harga per meter panjang dari pemilik, 23 Oktober 2026.'};
+    const rollCm=order.mode==='room'?roomLengthCm:lengthCm;
+    const bagCapacity=rollCm===1000?6:rollCm===600?10:null;
+    const bagCount=order.packing==='extra'&&order.product==='tikar'&&bagCapacity?Math.ceil(strips/bagCapacity):order.packing==='standard'?0:null;
+    const packingCost=bagCount===null?null:bagCount*50000;
+    const trimCost=order.trim?(order.product==='tikar'?strips*20000:null):0;
     const pending=[];
-    if(!rate)pending.push('Harga produk');if(order.trim)pending.push('Plisir');if(order.packing==='extra')pending.push('Packing tambahan');if(order.shipping!=='pickup'&&shippingCost===null)pending.push('Ongkir '+(order.shipping==='cargo'?'cargo':'kurir'));
+    if(!rate)pending.push('Harga produk');if(trimCost===null)pending.push('Plisir');if(packingCost===null)pending.push('Kapasitas karung untuk panjang ini');if(order.shipping!=='pickup'&&shippingCost===null)pending.push('Ongkir Indah Cargo');
     const subtotal=rate?Math.round(metersCm*rate/100):null;
+    const knownTotal=subtotal===null?null:subtotal+(trimCost??0)+(packingCost??0)+(shippingCost??0);
     const isFinal=pending.length===0;
-    return {order,version:this.priceBook.version,strips,meters:metersCm/100,area:metersCm*order.width/10000,trimMeters:(2*(order.width+(order.mode==='room'?roomLengthCm:lengthCm))*strips)/100,rate:rate??null,rateSource,subtotal,shippingCost,shippingSource:order.shipping==='pickup'?'pickup':shippingCost===null?'unknown':'manual',total:isFinal?subtotal+shippingCost:null,isFinal,pending,words:subtotal===null?null:toWords(isFinal?subtotal+shippingCost:subtotal)};
+    return {order,version:this.priceBook.version,strips,meters:metersCm/100,area:metersCm*order.width/10000,trimMeters:(2*(order.width+(order.mode==='room'?roomLengthCm:lengthCm))*strips)/100,rate:rate??null,rateSource,subtotal,trimCost,packingCost,bagCapacity,bagCount,knownTotal,shippingCost,shippingSource:order.shipping==='pickup'?'pickup':shippingCost===null?'unknown':'manual',total:isFinal?knownTotal:null,isFinal,pending,words:subtotal===null?null:toWords(knownTotal)};
   }
 }
 export const rupiah=value=>value===null?'Harga belum tersedia':new Intl.NumberFormat('id-ID',{style:'currency',currency:'IDR',maximumFractionDigits:0}).format(value);
