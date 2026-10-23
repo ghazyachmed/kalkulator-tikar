@@ -9,7 +9,7 @@ for(const [path,[file,type]] of Object.entries(files)){let body=await read(file)
 const icon='<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48"><rect width="48" height="48" rx="10" fill="#164f42"/><text x="8" y="34" fill="#f8f3df" font-family="Georgia" font-style="italic" font-size="32">ts</text></svg>';
 assetMap['/icon.svg']={body:icon,type:'image/svg+xml',etag:'"icon1"'};await writeFile(new URL('public/icon.svg',root),icon);
 await mkdir(new URL('public/images',root),{recursive:true});
-for(const name of ['tikar-hijau.jpg','tikar-marun.jpg']){const bytes=await readFile(new URL('web/images/'+name,root));assetMap['/images/'+name]={body:bytes.toString('base64'),base64:true,type:'image/jpeg',etag:'"'+createHash('sha256').update(bytes).digest('hex').slice(0,16)+'"'};await writeFile(new URL('public/images/'+name,root),bytes);}
+for(const name of ['tikar-hijau.jpg','tikar-marun.jpg','logo-toko-santri.png']){const bytes=await readFile(new URL('web/images/'+name,root));assetMap['/images/'+name]={body:bytes.toString('base64'),base64:true,type:name.endsWith('.png')?'image/png':'image/jpeg',etag:'"'+createHash('sha256').update(bytes).digest('hex').slice(0,16)+'"'};await writeFile(new URL('public/images/'+name,root),bytes);}
 let server='const assets = '+JSON.stringify(assetMap)+';\n';
 for(const path of ['domain/pricing.js','domain/shipping.js','services/security.js','services/events.js','services/assistant.js','worker/index.js'])server+=(await read(path)).replace(/^import .*?;\s*$/gm,'').replace(/\bexport (?=(?:class|function|const|async function)\b)/g,'')+'\n';
 await writeFile(new URL('dist/server/index.js',root),server);await copyFile(new URL('.openai/hosting.json',root),new URL('dist/.openai/hosting.json',root));

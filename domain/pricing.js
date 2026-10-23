@@ -1,7 +1,7 @@
 // Bantuan AI: Perancangan, implementasi, dan pengujian dibantu Codex.
 export const catalog = Object.freeze({
   version:'2026-10-23.1',
-  products:[{id:'tikar',name:'Tikar rol',unit:'meter',description:'Anyaman plastik • panjang sesuai kebutuhan'},{id:'karpet',name:'Karpet masjid',unit:'meter',description:'Pilihan karpet untuk masjid & musala'}],
+  products:[{id:'tikar',name:'Tikar rol',unit:'meter',description:'Anyaman plastik • panjang sesuai kebutuhan'}],
   rates:{'95':{plain:31000,writing:37000},'120':{plain:35000,writing:38000}},
   source:'Tarif pemilik Toko Santri, 23 Oktober 2026. Harga per meter panjang.',
 });
@@ -13,7 +13,7 @@ export class QuoteService {
   calculate(input){
     const order={...defaultOrder,...input};
     if(order.shipping==='courier')order.shipping='cargo';
-    inList(order.product,['tikar','karpet'],'Produk');inList(order.mode,['roll','room'],'Mode');inList(order.width,[95,120],'Lebar');inList(order.color,['hijau','krem','biru','marun'],'Warna');inList(order.packing,['standard','extra'],'Packing');inList(order.shipping,['pickup','courier','cargo'],'Pengiriman');inList(order.cargoService,['land','sea','air'],'Layanan cargo');
+    inList(order.product,['tikar'],'Produk');inList(order.mode,['roll','room'],'Mode');inList(order.width,[95,120],'Lebar');inList(order.color,['hijau','krem','biru','marun'],'Warna');inList(order.packing,['standard','extra'],'Packing');inList(order.shipping,['pickup','courier','cargo'],'Pengiriman');inList(order.cargoService,['land','sea','air'],'Layanan cargo');
     if(typeof order.writing!=='boolean'||typeof order.trim!=='boolean')throw new Error('Pilihan tambahan tidak valid.');
     if(!Number.isInteger(order.quantity)||order.quantity<1||order.quantity>10000)throw new Error('Jumlah harus 1–10.000 rol.');
     const lengthCm=dimension(order.length,'Panjang');const widthCm=dimension(order.roomWidth,'Lebar ruangan');const roomLengthCm=dimension(order.roomLength,'Panjang ruangan');

@@ -26,3 +26,6 @@ body{font-size:16px;line-height:1.6}.workspace{grid-template-columns:minmax(0,1.
 
 /* Pilihan Percakapan */
 .replyChoices{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}.replyChoices button{min-height:44px;border:1px solid #8da782;border-radius:8px;background:white;color:#164f42;font:inherit;font-weight:600;padding:10px 14px;cursor:pointer}.replyChoices button:hover{background:#e6f0df}.bubble{line-height:1.7}
+
+/* Identitas Resmi */
+.officialLogo{display:block;width:270px;height:auto;max-width:100%}.brand{max-width:38%;letter-spacing:normal}.productTabs{grid-template-columns:1fr}@media(max-width:700px){.brand{max-width:64%}.officialLogo{width:245px}header{gap:12px}.contact{padding:9px;font-size:12px}}
