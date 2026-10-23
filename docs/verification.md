@@ -46,3 +46,5 @@ Foto hijau dan marun berasal dari katalog resmi Toko Santri, disalin ke origin s
 ## Revisi 23 Oktober 2026
 
 Pengiriman disatukan menjadi ambil di toko atau Indah Cargo; tautan lama courier dimigrasikan ke cargo. Urutan DOM dan layar HP: formulir, hasil, ilustrasi, chatbot. Tombol hasil memindahkan fokus ke ringkasan. Teks input 16 px dan catatan 14 px. Harga yang belum ada tetap tidak diisi nol. Halaman resmi tarif Indah diperiksa ulang; nominal tarif rute otomatis belum terintegrasi. Uji baru mengamankan tautan lama dan penghapusan ongkir saat ukuran chat berubah. Hasil Lighthouse sebelumnya berlaku untuk versi sebelumnya, bukan revisi ini.
+
+Chat cepat: 46 pengujian lulus. Pertanyaan yang dikenali dijawab di browser tanpa request API; pertanyaan lainnya memakai server dengan batas 5,5 detik dan fallback lokal. Status proses diumumkan melalui aria-live, tombol dikunci selama proses, pemberitahuan lambat muncul setelah 1,8 detik. Animasi mengikuti prefers-reduced-motion.

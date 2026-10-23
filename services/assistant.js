@@ -2,6 +2,12 @@ import { ShippingService } from '../domain/shipping.js';
 import { rupiah } from '../domain/pricing.js';
 export class AssistantService {
   constructor(quoteService){this.quoteService=quoteService;}
+  async respond(message,context,remote){
+    const local=await this.reply(message,context);
+    if(local.handled)return local;
+    try{const result=await remote();if(typeof result?.answer!=='string'||!['rules','gemini'].includes(result.mode))throw Error('invalidReply');return result;}
+    catch{return {...local,fallback:true};}
+  }
   async reply(message,context,env={},requestFn=fetch){
     const text=message.toLowerCase();let intent='unknown';let mode='rules';let patch={};
     if(/ongkir|cargo|kurir|pengiriman|kirim|berat|volume|paket/.test(text))intent='shipping';
@@ -44,6 +50,6 @@ export class AssistantService {
       answer='Tikar '+width+' cm dengan tulisan: '+rupiah(q.rate)+'/meter untuk simulasi. '+q.rateSource.note+' Minimum pesanan, desain, dan tarif final perlu konfirmasi toko.';
     }
     else answer='Saya hanya membantu produk Toko Santri, estimasi tikar, warna, tulisan, plisir, packing, dan pengiriman. Coba: “Hitung panjang 5 meter, 2 rol” atau “Berapa ongkirnya?”.';
-    return {answer,mode,...(order?{order}:{})};
+    return {answer,mode,handled:intent!=='unknown',...(order?{order}:{})};
   }
 }

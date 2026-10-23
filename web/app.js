@@ -56,11 +56,22 @@ select('download').addEventListener('click',()=>{if(!valid)return;const url=URL.
 select('printQuote').addEventListener('click',()=>{if(valid)window.print();});
 function bubble(text,isUser=false){const item=document.createElement('div');item.className='bubble'+(isUser?' user':'');item.textContent=text;const log=select('chatMessages');log.append(item);while(log.children.length>30)log.firstElementChild.remove();log.scrollTop=log.scrollHeight;return item;}
 async function ask(message){
-  if(chatBusy)return;if(!valid){toast('Perbaiki input kalkulator terlebih dahulu.');return;}chatBusy=true;select('sendChat').disabled=true;select('chatInput').value='';bubble(message,true);const pending=bubble('Sebentar, saya periksa…');
-  try{let result;try{const response=await fetch('/api/chat',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({message,context:order}),signal:AbortSignal.timeout(6500)});if(!response.ok)throw new Error('assistantUnavailable');result=await response.json();}catch{result=await localAssistant.reply(message,order,{});}
-    pending.textContent=result.answer;select('chatMode').textContent=(result.mode==='gemini'?'Gemini · Pemahaman pertanyaan':'Mode aturan')+' · Hitungan dari tarif yang ditandai sumbernya';
-    if(result.order){const apply=document.createElement('button');apply.type='button';apply.className='applyQuote';apply.textContent='Terapkan ke kalkulator ↗';apply.addEventListener('click',()=>{order=quoteService.calculate(result.order).order;syncFields();update();if(chatDialog.open)chatDialog.close();select('quoteResult').scrollIntoView({behavior:'smooth',block:'start'});select('quoteResult').focus({preventScroll:true});toast('Hitungan diperbarui.');});pending.append(document.createElement('br'),apply);}
-  }catch{pending.textContent='Asisten sedang tidak tersedia. Anda tetap bisa menghitung di kalkulator atau menghubungi toko.';}finally{chatBusy=false;select('sendChat').disabled=false;select('chatMessages').scrollTop=select('chatMessages').scrollHeight;}
+  if(chatBusy)return;if(!valid){toast('Perbaiki input kalkulator terlebih dahulu.');return;}
+  chatBusy=true;select('sendChat').disabled=true;select('sendChat').textContent='Memproses…';select('chatForm').setAttribute('aria-busy','true');
+  document.querySelectorAll('[data-question]').forEach(button=>button.disabled=true);
+  select('chatInput').value='';bubble(message,true);const pending=bubble('Sedang menyiapkan jawaban…');pending.classList.add('loadingBubble');
+  select('chatStatus').textContent='Sedang menyiapkan jawaban…';
+  const slowTimer=setTimeout(()=>{select('chatStatus').textContent='Masih menghubungkan asisten. Kalkulator tetap bisa digunakan.';},1800);
+  try{
+    const result=await localAssistant.respond(message,order,async()=>{
+      const response=await fetch('/api/chat',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({message,context:order}),signal:AbortSignal.timeout(5500)});
+      if(!response.ok)throw Error('assistantUnavailable');return response.json();
+    });
+    pending.textContent=result.answer;
+    select('chatMode').textContent=result.mode==='gemini'?'Dibantu Gemini · Hitungan dari kalkulator':'Asisten berbasis aturan · Hitungan dari kalkulator';
+    select('chatStatus').textContent=result.fallback?'Koneksi lambat atau tidak tersedia. Bantuan dasar tetap aktif.':'Jawaban siap.';
+    if(result.order){const apply=document.createElement('button');apply.type='button';apply.className='applyQuote';apply.textContent='Terapkan ke kalkulator ↗';apply.addEventListener('click',()=>{order=quoteService.calculate(result.order).order;syncFields();update();if(chatDialog.open){chatOpener=select('quoteResult');chatDialog.close();}select('quoteResult').scrollIntoView({behavior:'smooth',block:'start'});select('quoteResult').focus({preventScroll:true});toast('Hitungan diperbarui.');});pending.append(document.createElement('br'),apply);}
+  }catch{pending.textContent='Asisten sedang tidak tersedia. Anda tetap bisa menghitung di kalkulator atau menghubungi toko.';select('chatStatus').textContent='Silakan coba lagi.';}finally{clearTimeout(slowTimer);pending.classList.remove('loadingBubble');chatBusy=false;select('sendChat').disabled=false;select('sendChat').textContent='Kirim ➤';select('chatForm').setAttribute('aria-busy','false');document.querySelectorAll('[data-question]').forEach(button=>button.disabled=false);select('chatMessages').scrollTop=select('chatMessages').scrollHeight;}
 }
 select('chatForm').addEventListener('submit',event=>{event.preventDefault();const message=select('chatInput').value.trim();if(message)ask(message);});document.querySelectorAll('[data-question]').forEach(button=>button.addEventListener('click',()=>ask(button.dataset.question)));
 try{const raw=new URLSearchParams(location.search).get('order');if(raw){if(raw.length>1800)throw new Error('tooLong');const parsed=JSON.parse(raw);const safe={};for(const key of Object.keys(defaultOrder))if(Object.hasOwn(parsed,key))safe[key]=parsed[key];order=quoteService.calculate({...defaultOrder,...safe}).order;toast('Hitungan dari tautan dimuat. Harga dihitung ulang dengan tarif terbaru.');}}catch{order={...defaultOrder};toast('Tautan tidak valid. Pilihan awal dipakai.');}
