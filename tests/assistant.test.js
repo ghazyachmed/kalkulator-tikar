@@ -34,3 +34,25 @@ test('Booking tanpa hitungan menawarkan admin tanpa pesanan contoh',async()=>{co
 
 test('Pesan WA membawa ukuran, biaya belum diketahui dan tujuan dengan encoding aman',()=>{const q=new QuoteService().calculate({...defaultOrder,mode:'room',roomLength:30,roomWidth:10,width:95,color:'biru',shipping:'cargo',packing:'extra'});const url=new URL(bookingLink(q,'Bogor & Depok'));assert.equal(url.hostname,'wa.me');const message=url.searchParams.get('text');assert.match(message,/30 × 10 m/);assert.match(message,/biru, lebar 95 cm/);assert.match(message,/Biaya diketahui/);assert.match(message,/Ongkir: Belum diketahui/);assert.match(message,/Bogor & Depok/);assert.match(message,/Packing: Biaya belum diketahui/);});
 test('Kontak tanpa quote tidak membawa ukuran contoh',()=>{const message=new URL(bookingLink(null)).searchParams.get('text');assert.doesNotMatch(message,/rol\/lajur|Estimasi total/);});
+
+test('Panjang dikali jumlah rol bukan ukuran ruangan',async()=>{
+  for(const message of ['pesan 8 m x 20 rol','8 meter × 20 roll','untuk musholla 8 m x 20 rol','20 rol x 8 m','800 cm x 20 rol']){
+    const first=await bot.reply(message,defaultOrder);
+    assert.equal(first.conversation.draft.mode,'roll',message);
+    assert.equal(first.conversation.draft.length,8,message);
+    assert.equal(first.conversation.draft.quantity,20,message);
+    const result=await bot.reply('120',defaultOrder,{},fetch,first.conversation);
+    const q=new QuoteService().calculate(result.order);
+    assert.equal(q.meters,160);assert.equal(q.subtotal,5600000);
+    assert.match(new URL(bookingLink(q)).searchParams.get('text'),/20 rol\/lajur × 8 m/);
+  }
+});
+test('Jumlah rol desimal atau nol tidak dipotong menjadi jumlah lain',async()=>{
+  for(const message of ['8 m x 0 rol','8 m x -20 rol','8 m x 2,5 rol']){
+    const result=await bot.reply(message,defaultOrder);assert.equal(result.order,undefined);assert.equal(result.conversation,undefined);
+  }
+});
+test('Ukuran ruangan dengan meter tetap dihitung sebagai ruangan',async()=>{
+  const result=await bot.reply('8 m x 20 m tikar lebar 120 cm',defaultOrder);
+  assert.equal(result.order.mode,'room');assert.equal(result.order.roomLength,8);assert.equal(result.order.roomWidth,20);
+});

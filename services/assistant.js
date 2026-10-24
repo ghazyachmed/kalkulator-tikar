@@ -11,7 +11,10 @@ export class AssistantService {
   async reply(message,context,env={},requestFn=fetch,conversation={}){
     const text=message.toLowerCase().trim();let intent='unknown';let mode='rules';let patch={};let roomNote='';
     const number=value=>Number(value.replace(',','.'));
-    const pair=text.match(/(-?\d+(?:[.,]\d+)?)\s*(cm|m|meter)?\s*[x×]\s*(-?\d+(?:[.,]\d+)?)\s*(cm|m|meter)?\b/);
+    const rollPair=text.match(/(-?\d+(?:[.,]\d+)?)\s*(cm|meter|m)\s*[x×]\s*(-?\d+(?:[.,]\d+)?)\s*roll?\b/);
+    const reverseRollPair=text.match(/(-?\d+(?:[.,]\d+)?)\s*roll?\s*[x×]\s*(-?\d+(?:[.,]\d+)?)\s*(cm|meter|m)\b/);
+    const explicitRoll=Boolean(rollPair||reverseRollPair);
+    const pair=!explicitRoll&&text.match(/(-?\d+(?:[.,]\d+)?)\s*(cm|m|meter)?\s*[x×]\s*(-?\d+(?:[.,]\d+)?)\s*(cm|m|meter)?\b/);
     const room=/ruang|mush?ol+ah?|musala|masjid/.test(text);
     const namedLength=text.match(/panjang\s*(-?\d+(?:[.,]\d+)?)\s*(cm|meter|m)?\b/);
     const namedWidth=text.match(/lebar\s*(-?\d+(?:[.,]\d+)?)\s*(cm|meter|m)?\b/);
@@ -25,14 +28,19 @@ export class AssistantService {
     if(/tanpa tulisan/.test(text))patch.writing=false;else if(/dengan tulisan|pakai tulisan/.test(text))patch.writing=true;
     if(widthChoice)patch.width=Number(widthChoice[1]);
     if(/\d\s*[x×]\s*\d+(?:[.,]\d+)?\s*[x×]/.test(text))return {answer:'Cukup panjang × lebar lantai, tanpa tinggi. Contoh: 30 × 10 meter. Berapa ukuran lantainya?',mode,handled:true};
-    if(pair){
+    if(explicitRoll){
+      patch.mode='roll';
+      patch.length=rollPair?toMeters(rollPair[1],rollPair[2]):toMeters(reverseRollPair[2],reverseRollPair[3]);
+      patch.quantity=number(rollPair?rollPair[3]:reverseRollPair[1]);
+      roomNote='Saya baca '+patch.quantity+' rol, masing-masing panjang '+patch.length+' m (total '+patch.length*patch.quantity+' meter).';
+    }else if(pair){
       patch.mode='room';patch.roomLength=toMeters(pair[1],pair[2]||pair[4]);patch.roomWidth=toMeters(pair[3],pair[4]||pair[2]);
       roomNote='Saya baca panjang '+patch.roomLength+' m × lebar '+patch.roomWidth+' m'+(!pair[2]&&!pair[4]?' (asumsi satuan meter)':'')+'.';
     }else if(room&&namedLength&&namedWidth){patch.mode='room';patch.roomLength=toMeters(namedLength[1],namedLength[2]);patch.roomWidth=toMeters(namedWidth[1],namedWidth[2]);roomNote='Panjang '+patch.roomLength+' m × lebar '+patch.roomWidth+' m.';}
-    const length=!pair&&!room?text.match(/(?:panjang\s*)?(-?\d+(?:[.,]\d+)?)\s*(meter|m)\b/):null;
+    const length=!explicitRoll&&!pair&&!room?text.match(/(?:panjang\s*)?(-?\d+(?:[.,]\d+)?)\s*(meter|m)\b/):null;
     const count=text.match(/(\d+)\s*(?:rol|roll)\b/);
-    if(length){patch.length=number(length[1]);patch.mode='roll';}if(count&&!pair&&!room){patch.quantity=Number(count[1]);patch.mode='roll';}
-    const hasSize=Boolean(pair||(room&&namedLength&&namedWidth)||length||count);
+    if(length){patch.length=number(length[1]);patch.mode='roll';}if(count&&!explicitRoll&&!pair&&!room){patch.quantity=Number(count[1]);patch.mode='roll';}
+    const hasSize=Boolean(explicitRoll||pair||(room&&namedLength&&namedWidth)||length||count);
     const discovery=/apa saja|apa aja|pilihan|tersedia|ada ukuran|ukuran apa|jual apa/.test(text);
     if(conversation.awaitingWidth&&widthChoice&&!hasSize){patch={...conversation.draft,...patch};roomNote=conversation.roomNote||'';intent='quote';}
     else if(hasSize){
