@@ -15,3 +15,24 @@ const chat=new CarpetAssistant();
 test('Chat karpet membedakan meter dan jumlah lajur',()=>{const r=chat.reply('Medina 105 panjang 8 m x 20 rol',base);assert.equal(r.quote.meters,160);assert.equal(r.quote.subtotal,19200000);});
 test('Chat karpet menghitung jenis tinggi dan biaya pengerjaan',()=>{const r=chat.reply('Medina 115 ruangan 10 x 5 m obras 4 sambung 2 tiang 3 kirim luar kota',base);assert.equal(r.quote.meters,50);assert.equal(r.quote.knownTotal,6750000);assert.equal(r.quote.total,null);});
 test('Chat katalog tidak menghasilkan pesanan contoh',()=>{assert.equal(chat.reply('pilihan karpet',base).quote,undefined);});
+test('Ruangan lebih sempit menyarankan potong dan obras tanpa menambah biaya',()=>{
+ const q=service.calculate({...base,product:'dinasty',mode:'room',roomLength:8,roomWidth:0.9});
+ assert.equal(q.advice.cutWidthCm,30);assert.equal(q.advice.multipleRows,false);
+ assert.match(q.advice.notes.join(' '),/obras/i);assert.equal(q.overlockCost,0);assert.equal(q.seamCost,0);
+});
+test('Lebar pas beberapa baris tidak menyarankan pemotongan',()=>{
+ const q=service.calculate({...base,product:'dinasty',mode:'room',roomLength:8,roomWidth:3.6});
+ assert.equal(q.strips,3);assert.equal(q.advice.cutWidthCm,0);assert.equal(q.advice.multipleRows,true);
+ assert.match(q.advice.notes.join(' '),/berdampingan/);assert.equal(q.seamCost,0);
+});
+test('Lebar tidak pas menjelaskan lebar baris terakhir dan estimasi bahan utuh',()=>{
+ const q=service.calculate({...base,product:'dinasty',mode:'room',roomLength:8,roomWidth:3});
+ assert.equal(q.strips,3);assert.equal(q.advice.lastRowWidthCm,60);assert.equal(q.advice.cutWidthCm,60);assert.equal(q.meters,24);
+});
+test('Panjang pesanan tanpa ukuran ruangan tidak menebak potongan atau sambungan',()=>{
+ const q=service.calculate(base);assert.equal(q.advice.cutWidthCm,null);assert.match(q.advice.notes.join(' '),/ukuran ruangan/);
+});
+test('Chat memahami baris dan memberikan rekomendasi yang sama dengan kalkulator',()=>{
+ const q=chat.reply('Dinasty 8 m x 3 baris',base);assert.equal(q.quote.meters,24);assert.match(q.answer,/3 baris/);
+ const room=chat.reply('Dinasty ruangan 8 x 3 m',base);assert.match(room.answer,/obras/i);assert.equal(room.quote.overlockCost,0);
+});

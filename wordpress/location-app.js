@@ -5,7 +5,7 @@
  const branches=storeLocations;
  if(branches.length){
   get('carpetLocation').hidden=false;
-  get('carpetStoreName').textContent='Cek jarak dari cabang terdekat';
+  get('carpetStoreName').textContent='Cek jarak dari gudang';
   for(const branch of branches){const item=document.createElement('p');const link=document.createElement('a');link.textContent=branch.name+' — '+branch.address+' ↗';link.href=branch.mapUrl;link.target='_blank';link.rel='noopener noreferrer';item.append(link);get('carpetStoreAddress').append(item);}
   const locator=new LocationService(navigator.geolocation);
   let requestId=0;let lastResult=null;
@@ -19,7 +19,7 @@
     const point=await locator.request();if(current!==requestId)return;
     const result=RadiusService.nearest(branches,point);lastResult=result;
     const km=result.distanceKm.toLocaleString('id-ID',{minimumFractionDigits:1,maximumFractionDigits:2});
-    const lead='Cabang terdekat: '+result.branch.name+'. Jarak'+': '+km+' km (garis lurus). Akurasi lokasi ±'+Math.ceil(result.accuracyMeters)+' meter. ';
+    const lead='Jarak dari '+result.branch.name+': '+km+' km (garis lurus). Akurasi lokasi ±'+Math.ceil(result.accuracyMeters)+' meter. ';
     get('carpetLocationStatus').textContent=lead+(result.zone==='inside'?'Lokasi ini berada dalam radius 10 km. Jika ini alamat kirim Anda dan masih dalam kota, gunakan tarif lokal di bawah.':result.zone==='outside'?'Lokasi ini berjarak 10 km atau lebih. Minta tarif pengiriman melalui WhatsApp.':'Lokasi terlalu dekat dengan batas 10 km untuk memastikan tarif. Coba cari lokasi lagi atau tanyakan ongkir melalui WhatsApp.');
     get('carpetUseLocal').hidden=result.zone!=='inside';
     if(result.zone!=='inside'){get('carpetDelivery').value='quote';get('carpetDelivery').dispatchEvent(new Event('change',{bubbles:true}));}

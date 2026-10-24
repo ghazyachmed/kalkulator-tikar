@@ -84,8 +84,8 @@ class AssistantService {
   async reply(message,context,env={},requestFn=fetch,conversation={}){
     const text=message.toLowerCase().trim();let intent='unknown';let mode='rules';let patch={};let roomNote='';
     const number=value=>Number(value.replace(',','.'));
-    const rollPair=text.match(/(-?\d+(?:[.,]\d+)?)\s*(cm|meter|m)\s*[x×]\s*(-?\d+(?:[.,]\d+)?)\s*roll?\b/);
-    const reverseRollPair=text.match(/(-?\d+(?:[.,]\d+)?)\s*roll?\s*[x×]\s*(-?\d+(?:[.,]\d+)?)\s*(cm|meter|m)\b/);
+    const rollPair=text.match(/(-?\d+(?:[.,]\d+)?)\s*(cm|meter|m)\s*[x×]\s*(-?\d+(?:[.,]\d+)?)\s*(?:roll?|baris)\b/);
+    const reverseRollPair=text.match(/(-?\d+(?:[.,]\d+)?)\s*(?:roll?|baris)\s*[x×]\s*(-?\d+(?:[.,]\d+)?)\s*(cm|meter|m)\b/);
     const explicitRoll=Boolean(rollPair||reverseRollPair);
     const pair=!explicitRoll&&text.match(/(-?\d+(?:[.,]\d+)?)\s*(cm|m|meter)?\s*[x×]\s*(-?\d+(?:[.,]\d+)?)\s*(cm|m|meter)?\b/);
     const room=/ruang|mush?ol+ah?|musala|masjid/.test(text);
@@ -111,7 +111,7 @@ class AssistantService {
       roomNote='Saya baca panjang '+patch.roomLength+' m × lebar '+patch.roomWidth+' m'+(!pair[2]&&!pair[4]?' (asumsi satuan meter)':'')+'.';
     }else if(room&&namedLength&&namedWidth){patch.mode='room';patch.roomLength=toMeters(namedLength[1],namedLength[2]);patch.roomWidth=toMeters(namedWidth[1],namedWidth[2]);roomNote='Panjang '+patch.roomLength+' m × lebar '+patch.roomWidth+' m.';}
     const length=!explicitRoll&&!pair&&!room?text.match(/(?:panjang\s*)?(-?\d+(?:[.,]\d+)?)\s*(meter|m)\b/):null;
-    const count=text.match(/(\d+)\s*(?:rol|roll)\b/);
+    const count=text.match(/(\d+)\s*(?:rol|roll|baris)\b/);
     if(length){patch.length=number(length[1]);patch.mode='roll';}if(count&&!explicitRoll&&!pair&&!room){patch.quantity=Number(count[1]);patch.mode='roll';}
     const hasSize=Boolean(explicitRoll||pair||(room&&namedLength&&namedWidth)||length||count);
     const discovery=/apa saja|apa aja|pilihan|tersedia|ada ukuran|ukuran apa|jual apa/.test(text);
@@ -154,8 +154,8 @@ class AssistantService {
       try{
         const q=this.quoteService.calculate({...context,...patch});order=q.order;
         answer=q.subtotal===null?'Harga varian ini belum tersedia. Silakan konfirmasi ke Toko Santri.':[
-          [roomNote,q.order.mode==='room'?'Tikar '+q.order.color+', lebar '+q.order.width+' cm.\nLajur memanjang mengikuti panjang ruangan.':''].filter(Boolean).join('\n'),
-          [q.strips+' rol/lajur × '+q.meters/q.strips+' meter',
+          [roomNote,q.order.mode==='room'?'Tikar '+q.order.color+', lebar '+q.order.width+' cm.\nBaris karpet memanjang mengikuti panjang ruangan.':''].filter(Boolean).join('\n'),
+          [q.strips+' rol/baris × '+q.meters/q.strips+' meter',
             'Harga per meter: '+rupiah(q.rate),
             'Subtotal tikar: '+rupiah(q.subtotal),
             q.trimCost?'Plisir: '+rupiah(q.trimCost):'',
@@ -191,7 +191,7 @@ class AssistantService {
 // Dibantu AI: ringkasan pemesanan dari hitungan terverifikasi.
 function bookingLink(quote,destination=''){
   const lines=['Assalamu’alaikum, saya ingin pesan tikar Toko Santri.'];
-  if(quote){const q=quote;const o=q.order;lines.push('', 'Tikar rol '+o.color+', lebar '+o.width+' cm', ...(o.mode==='room'?['Ruangan: '+o.roomLength+' × '+o.roomWidth+' m']:[]),q.strips+' rol/lajur × '+q.meters/q.strips+' m','Tulisan: '+(o.writing?'Ya':'Tidak'),'Plisir dua ujung: '+(o.trim?rupiah(q.trimCost):'Tidak'),'Packing: '+(o.packing==='extra'?(q.packingCost===null?'Biaya belum diketahui':rupiah(q.packingCost)+' · '+q.bagCount+' karung'):'Standar'),'Subtotal tikar: '+rupiah(q.subtotal),'Pengiriman: '+(o.shipping==='pickup'?'Ambil di toko':'Indah Cargo'),'Ongkir: '+(q.shippingSource==='pickup'?'Tanpa ongkir':q.shippingSource==='manual'?rupiah(q.shippingCost)+' (input pelanggan, belum diverifikasi)':'Belum diketahui'),(q.total===null?'Biaya diketahui: ':'Estimasi total: ')+rupiah(q.knownTotal),...(q.pending.length?['Belum termasuk: '+q.pending.join(', ')]:[]));}
+  if(quote){const q=quote;const o=q.order;lines.push('', 'Tikar rol '+o.color+', lebar '+o.width+' cm', ...(o.mode==='room'?['Ruangan: '+o.roomLength+' × '+o.roomWidth+' m']:[]),q.strips+' rol/baris × '+q.meters/q.strips+' m','Tulisan: '+(o.writing?'Ya':'Tidak'),'Plisir dua ujung: '+(o.trim?rupiah(q.trimCost):'Tidak'),'Packing: '+(o.packing==='extra'?(q.packingCost===null?'Biaya belum diketahui':rupiah(q.packingCost)+' · '+q.bagCount+' karung'):'Standar'),'Subtotal tikar: '+rupiah(q.subtotal),'Pengiriman: '+(o.shipping==='pickup'?'Ambil di toko':'Indah Cargo'),'Ongkir: '+(q.shippingSource==='pickup'?'Tanpa ongkir':q.shippingSource==='manual'?rupiah(q.shippingCost)+' (input pelanggan, belum diverifikasi)':'Belum diketahui'),(q.total===null?'Biaya diketahui: ':'Estimasi total: ')+rupiah(q.knownTotal),...(q.pending.length?['Belum termasuk: '+q.pending.join(', ')]:[]));}
   if(destination.trim())lines.push('Tujuan: '+destination.trim());
   lines.push('','Mohon cek stok, rincian biaya, dan ketersediaan pesanan.');
   return 'https://wa.me/6285105016189?text='+encodeURIComponent(lines.join('\n'));
@@ -215,7 +215,7 @@ function syncFields(){
   select('shippingCost').value=order.shippingCost??'';
   for(const key of ['product','mode','width','color','shipping'])setPressed('data-'+key,order[key]);
 }
-function receipt(){const q=currentQuote;return ['TOKO SANTRI — ESTIMASI',catalog.products.find(p=>p.id===order.product).name+' · '+colorNames[order.color],`Lebar: ${order.width} cm`,`${q.strips} rol/lajur × ${q.meters/q.strips} m = ${q.meters} m`,`Tulisan: ${order.writing?'Ya':'Tidak'}`,`Plisir dua ujung: ${rupiah(q.trimCost)}`,`Packing: ${rupiah(q.packingCost)}${q.bagCount?' · '+q.bagCount+' karung':''}`,`Sumber harga: ${q.rateSource.label}`,q.rateSource.kind==='benchmark'||q.rateSource.kind==='assumption'?q.rateSource.note:'',`Subtotal produk: ${rupiah(q.subtotal)}`,`Pengiriman: ${order.shipping==='pickup'?'Ambil di toko':order.shipping==='cargo'?'Indah Cargo':'Kurir'}`,`Tujuan: ${select('destination').value.trim()||'Belum diisi'}`,order.shipping!=='pickup'&&currentShipment?`PERKIRAAN paket: ${currentShipment.packageCount} koli; berat dengan packing ~${currentShipment.actualWeight.toFixed(2)} kg; volume ~${currentShipment.volumeWeight.toFixed(2)} kg; acuan bulat ${currentShipment.billableReference} kg. Benchmark Swan + asumsi packing, bukan hasil timbang.`:'',`Ongkir: ${q.shippingSource==='manual'?rupiah(q.shippingCost)+' (input pelanggan, belum diverifikasi)':q.shippingSource==='pickup'?'Tanpa ongkir':'Perlu konfirmasi'}`,q.total===null?'BIAYA DIKETAHUI: '+rupiah(q.knownTotal):`ESTIMASI TOTAL: ${rupiah(q.total)}`,q.words?'Terbilang '+(q.total===null?'biaya diketahui':'total')+': '+q.words:'',q.pending.length?'Belum termasuk: '+q.pending.join(', '):'',`Versi harga: ${q.version}`,'Tarif Toko Santri per meter panjang. Ongkir mengikuti daerah; berat paket masih estimasi.'].filter(Boolean).join('\n');}
+function receipt(){const q=currentQuote;return ['TOKO SANTRI — ESTIMASI',catalog.products.find(p=>p.id===order.product).name+' · '+colorNames[order.color],`Lebar: ${order.width} cm`,`${q.strips} rol/baris × ${q.meters/q.strips} m = ${q.meters} m`,`Tulisan: ${order.writing?'Ya':'Tidak'}`,`Plisir dua ujung: ${rupiah(q.trimCost)}`,`Packing: ${rupiah(q.packingCost)}${q.bagCount?' · '+q.bagCount+' karung':''}`,`Sumber harga: ${q.rateSource.label}`,q.rateSource.kind==='benchmark'||q.rateSource.kind==='assumption'?q.rateSource.note:'',`Subtotal produk: ${rupiah(q.subtotal)}`,`Pengiriman: ${order.shipping==='pickup'?'Ambil di toko':order.shipping==='cargo'?'Indah Cargo':'Kurir'}`,`Tujuan: ${select('destination').value.trim()||'Belum diisi'}`,order.shipping!=='pickup'&&currentShipment?`PERKIRAAN paket: ${currentShipment.packageCount} koli; berat dengan packing ~${currentShipment.actualWeight.toFixed(2)} kg; volume ~${currentShipment.volumeWeight.toFixed(2)} kg; acuan bulat ${currentShipment.billableReference} kg. Benchmark Swan + asumsi packing, bukan hasil timbang.`:'',`Ongkir: ${q.shippingSource==='manual'?rupiah(q.shippingCost)+' (input pelanggan, belum diverifikasi)':q.shippingSource==='pickup'?'Tanpa ongkir':'Perlu konfirmasi'}`,q.total===null?'BIAYA DIKETAHUI: '+rupiah(q.knownTotal):`ESTIMASI TOTAL: ${rupiah(q.total)}`,q.words?'Terbilang '+(q.total===null?'biaya diketahui':'total')+': '+q.words:'',q.pending.length?'Belum termasuk: '+q.pending.join(', '):'',`Versi harga: ${q.version}`,'Tarif Toko Santri per meter panjang. Ongkir mengikuti daerah; berat paket masih estimasi.'].filter(Boolean).join('\n');}
 function renderPackage(){
   const panel=select('packageSummary');panel.replaceChildren();
   if(!currentShipment){panel.textContent='Model berat hanya tersedia untuk tikar rol. Berat karpet perlu dikonfirmasi toko.';select('packageDimensions').textContent='';return;}
@@ -230,7 +230,7 @@ function update(){
     select('rollFields').hidden=order.mode!=='roll';select('roomFields').hidden=order.mode!=='room';select('length').disabled=select('quantity').disabled=order.mode!=='roll';select('roomWidth').disabled=select('roomLength').disabled=order.mode!=='room';
     select('productNotice').hidden=order.product==='tikar';select('rateNotice').hidden=q.rateSource.kind!=='benchmark'&&q.rateSource.kind!=='assumption';select('rateNotice').textContent='' ;select('writingNote').textContent='Dengan tulisan: '+rupiah(q.rate)+'/m.';select('summaryRateSource').textContent='Sumber: '+q.rateSource.label+(q.rateSource.kind==='owner'?' · per meter panjang':'');select('writingNote').hidden=!order.writing;select('colorName').textContent=colorNames[order.color];select('summaryName').textContent=catalog.products.find(p=>p.id===order.product).name;
     select('summaryVariant').textContent=`Lebar ${order.width} cm · ${colorNames[order.color]}${order.writing?' · Dengan nama':''}`;
-    select('metersText').textContent=`${q.meters.toLocaleString('id-ID')} m · ${q.strips} ${order.mode==='room'?'lajur':'rol'}`;
+    select('metersText').textContent=`${q.meters.toLocaleString('id-ID')} m · ${q.strips} ${order.mode==='room'?'baris':'rol'}`;
     select('rateText').textContent=rupiah(q.rate);select('subtotalText').textContent=rupiah(q.subtotal);
     select('extraText').textContent=order.trim||order.packing==='extra'?'Plisir '+rupiah(q.trimCost)+' · Packing '+rupiah(q.packingCost)+(q.bagCount?' ('+q.bagCount+' karung)':''):'Tanpa tambahan';
     select('deliveryText').textContent=order.shipping==='pickup'?'Ambil di toko':q.shippingSource==='manual'?rupiah(q.shippingCost)+'*':order.shipping==='cargo'?'Indah Cargo · isi ongkir':'Indah Cargo · isi ongkir';
@@ -239,8 +239,8 @@ function update(){
     select('wordsText').textContent=q.words?(q.total===null?'Biaya diketahui: ':'')+q.words.charAt(0).toUpperCase()+q.words.slice(1)+'.':'Harga belum tersedia untuk varian ini.';
     select('pendingText').hidden=q.pending.length===0;select('pendingText').textContent='Belum termasuk: '+q.pending.join(', ')+'.';
     select('shippingFields').hidden=order.shipping==='pickup';select('cargoTools').hidden=order.shipping!=='cargo';select('shippingHint').textContent=order.shipping==='pickup'?'Tanpa ongkir karena pesanan diambil di toko.':q.shippingSource==='manual'?'Ongkir yang Anda masukkan sudah dijumlahkan.':'Cek tarif Indah untuk menambahkan ongkir.';
-    select('layoutText').textContent=`${q.strips} ${order.mode==='room'?'lajur':'rol'} × ${q.meters/q.strips} meter · ${q.area.toLocaleString('id-ID')} m²${order.trim?' · Plisir '+q.strips+' rol (dua ujung)':''}`;
-    select('planStrips').replaceChildren();for(let i=0;i<Math.min(q.strips,8);i++){const strip=document.createElement('div');strip.className='planStrip';strip.textContent=(q.meters/q.strips)+' m × '+order.width+' cm';select('planStrips').append(strip);}if(q.strips>8){const more=document.createElement('span');more.className='hint';more.textContent='+ '+(q.strips-8)+' rol/lajur lainnya';select('planStrips').append(more);}
+    select('layoutText').textContent=`${q.strips} ${order.mode==='room'?'baris':'rol'} × ${q.meters/q.strips} meter · ${q.area.toLocaleString('id-ID')} m²${order.trim?' · Plisir '+q.strips+' rol (dua ujung)':''}`;
+    select('planStrips').replaceChildren();for(let i=0;i<Math.min(q.strips,8);i++){const strip=document.createElement('div');strip.className='planStrip';strip.textContent=(q.meters/q.strips)+' m × '+order.width+' cm';select('planStrips').append(strip);}if(q.strips>8){const more=document.createElement('span');more.className='hint';more.textContent='+ '+(q.strips-8)+' rol/baris lainnya';select('planStrips').append(more);}
     select('whatsapp').href='https://wa.me/6285105016189?text='+encodeURIComponent('Assalamu’alaikum, saya ingin konfirmasi pesanan berikut.\n\n'+receipt());select('whatsapp').removeAttribute('aria-disabled');
     for(const id of ['share','download','printQuote'])select(id).disabled=false;
   }catch(error){valid=false;select('formError').textContent=error.message;select('formError').hidden=false;select('totalText').textContent='Periksa isian';select('wordsText').textContent='Perbaiki ukuran untuk melihat estimasi terbaru.';select('whatsapp').removeAttribute('href');select('whatsapp').setAttribute('aria-disabled','true');for(const id of ['share','download','printQuote'])select(id).disabled=true;}
@@ -300,16 +300,32 @@ class CarpetQuoteService{
     if(!['pickup','local','quote'].includes(order.delivery))throw Error('Pilih cara pengiriman.');
     const number=(value,label,min,max,integer=false)=>{if(!Number.isFinite(value)||value<min||value>max||(integer&&!Number.isInteger(value)))throw Error(label+' tidak valid.');return value;};
     const length=number(order.mode==='room'?order.roomLength:order.length,'Panjang',0.01,1000);
-    const strips=order.mode==='room'?Math.ceil(number(order.roomWidth,'Lebar ruangan',0.01,1000)*100/product.width):number(order.quantity,'Jumlah lajur',1,10000,true);
+    const strips=order.mode==='room'?Math.ceil(number(order.roomWidth,'Lebar ruangan',0.01,1000)*100/product.width):number(order.quantity,'Jumlah baris karpet',1,10000,true);
     const meters=Math.round(length*strips*100)/100;
     const subtotal=Math.round(meters*product.rate);
     const overlockCost=number(order.overlock,'Titik obras',0,10000,true)*10000;
     const seamCost=number(order.seams,'Jumlah sambungan',0,10000,true)*30000;
-    const pillarCost=number(order.pillars,'Titik lubang / tiang',0,10000,true)*50000;
+    const pillarCost=number(order.pillars,'Jumlah lubang / tiang',0,10000,true)*50000;
     const shippingCost=order.delivery==='pickup'?0:order.delivery==='local'?100000:null;
     const knownTotal=subtotal+overlockCost+seamCost+pillarCost+(shippingCost??0);
-    return {order:{...order},product,length,strips,meters,subtotal,overlockCost,seamCost,pillarCost,shippingCost,knownTotal,total:shippingCost===null?null:knownTotal,pending:shippingCost===null?['ongkir']:[]};
+    const advice=carpetAdvice(order,product,strips);
+    return {advice,order:{...order},product,length,strips,meters,subtotal,overlockCost,seamCost,pillarCost,shippingCost,knownTotal,total:shippingCost===null?null:knownTotal,pending:shippingCost===null?['ongkir']:[]};
   }
+}
+
+// Rekomendasi tidak menetapkan jumlah titik pengerjaan.
+function carpetAdvice(order,product,rows){
+ const fmt=value=>value.toLocaleString('id-ID',{maximumFractionDigits:2});
+ if(order.mode!=='room')return {cutWidthCm:null,multipleRows:false,notes:['Punya ukuran ruangan? Pilih “Dari ukuran ruangan” untuk melihat saran potong, obras, dan sambungan.']};
+ const roomCm=Math.round(order.roomWidth*10000)/100;
+ const cutWidthCm=Math.max(0,Math.round((rows*product.width-roomCm)*100)/100);
+ const lastRowWidthCm=Math.round((product.width-cutWidthCm)*100)/100;
+ const notes=[];
+ if(cutWidthCm>0){notes.push('Disarankan: sesuaikan lebar '+(rows===1?'karpet':'baris terakhir')+' dari '+product.width+' cm menjadi '+fmt(lastRowWidthCm)+' cm (potong '+fmt(cutWidthCm)+' cm). Pertimbangkan obras pada tepi hasil potongan agar rapi.');notes.push('Estimasi bahan tetap memakai lebar karpet utuh sebelum dipotong.');}
+ else notes.push('Lebar ruangan pas untuk '+rows+' baris karpet. Tidak diperlukan pemotongan lebar berdasarkan ukuran ini.');
+ if(rows>1)notes.push('Pasang '+rows+' baris karpet berdampingan. Sambungan bisa dipertimbangkan jika ingin baris-barisnya menyatu; ruangan yang lebih lebar tidak otomatis membutuhkan jasa sambung.');
+ notes.push('Saran ini mengikuti arah panjang ruangan. Jumlah titik obras dan sambungan ditentukan dari rencana pemasangan; biaya baru ditambahkan saat Anda mengisi jumlahnya.');
+ return {cutWidthCm,lastRowWidthCm,multipleRows:rows>1,notes};
 }
 
 
@@ -321,22 +337,22 @@ class CarpetAssistant{
   const text=message.toLowerCase().trim();const num=s=>Number(s.replace(',','.'));const patch={};
   const product=carpetCatalog.find(p=>text.includes(p.name.toLowerCase())||text.includes(p.id.toLowerCase()))||(/medina.*(?:gambar|masjid)/.test(text)?carpetCatalog.find(p=>p.id==='medinaGambar'):null);
   if(product)patch.product=product.id;
-  const forward=text.match(/(-?\d+(?:[.,]\d+)?)\s*(cm|meter|m)\s*[x×]\s*(-?\d+(?:[.,]\d+)?)\s*(?:roll?|lajur|potong(?:an)?)\b/);
-  const reverse=text.match(/(-?\d+(?:[.,]\d+)?)\s*(?:roll?|lajur|potong(?:an)?)\s*[x×]\s*(-?\d+(?:[.,]\d+)?)\s*(cm|meter|m)\b/);
+  const forward=text.match(/(-?\d+(?:[.,]\d+)?)\s*(cm|meter|m)\s*[x×]\s*(-?\d+(?:[.,]\d+)?)\s*(?:roll?|lajur|baris(?:\s+karpet)?|potong(?:an)?)\b/);
+  const reverse=text.match(/(-?\d+(?:[.,]\d+)?)\s*(?:roll?|lajur|baris(?:\s+karpet)?|potong(?:an)?)\s*[x×]\s*(-?\d+(?:[.,]\d+)?)\s*(cm|meter|m)\b/);
   const pair=text.match(/(-?\d+(?:[.,]\d+)?)\s*(cm|meter|m)?\s*[x×]\s*(-?\d+(?:[.,]\d+)?)\s*(cm|meter|m)?\b/);
   const meters=(v,u)=>num(v)/(u==='cm'?100:1);
   if(forward||reverse){patch.mode='length';patch.length=forward?meters(forward[1],forward[2]):meters(reverse[2],reverse[3]);patch.quantity=num(forward?forward[3]:reverse[1]);}
   else if(pair){patch.mode='room';patch.roomLength=meters(pair[1],pair[2]||pair[4]);patch.roomWidth=meters(pair[3],pair[4]||pair[2]);}
-  else{const length=text.match(/(?:panjang\s*)?(-?\d+(?:[.,]\d+)?)\s*(meter|m)\b/);const count=text.match(/(-?\d+(?:[.,]\d+)?)\s*(?:roll?|lajur|potong(?:an)?)\b/);if(length){patch.mode='length';patch.length=num(length[1]);}if(count){patch.mode='length';patch.quantity=num(count[1]);}}
+  else{const length=text.match(/(?:panjang\s*)?(-?\d+(?:[.,]\d+)?)\s*(meter|m)\b/);const count=text.match(/(-?\d+(?:[.,]\d+)?)\s*(?:roll?|lajur|baris(?:\s+karpet)?|potong(?:an)?)\b/);if(length){patch.mode='length';patch.length=num(length[1]);}if(count){patch.mode='length';patch.quantity=num(count[1]);}}
   for(const [key,term] of [['overlock','obras'],['seams','sambung(?:an)?'],['pillars','(?:lubang|lobang|tiang)']]){const before=text.match(new RegExp('(-?\\d+(?:[.,]\\d+)?)\\s*(?:titik\\s*)?'+term));const after=text.match(new RegExp(term+'\\s*(-?\\d+(?:[.,]\\d+)?)'));if(before||after)patch[key]=num((after||before)[1]);if(new RegExp('tanpa\\s*'+term).test(text))patch[key]=0;}
   if(/luar kota|di atas 10|lebih dari 10|>=\s*10/.test(text))patch.delivery='quote';else if(/kurang dari 10|<\s*10|kirim lokal/.test(text))patch.delivery='local';else if(/ambil.*toko/.test(text))patch.delivery='pickup';
   const numeric=Object.keys(patch).length>0;
   if(!numeric&&/pilihan|jenis|harga apa|daftar|jual apa/.test(text))return {answer:'Ada 15 jenis karpet. Tinggi mengikuti jenisnya. Harga per meter panjang:\n\n'+carpetCatalog.map(p=>p.name+' · '+p.width+' cm · '+rupiah(p.rate)+'/m').join('\n')+'\n\nPilih jenis pada formulir atau tulis, misalnya “Medina 115 untuk ruangan 10 × 5 m”.'};
-  if(!numeric&&/obras|titik|sambung|lubang|lobang|tiang/.test(text))return {answer:'Biaya pengerjaan:\n• Obras: Rp10.000/titik\n• Sambung: Rp30.000/sambungan\n• Lubang / tiang: Rp50.000/titik\n\nTitik adalah bagian karpet yang perlu dikerjakan. Contoh: perlu lubang untuk 3 tiang? Tulis “tiang 3”.\n\nUntuk obras dan sambungan, isi jumlah pengerjaan yang dibutuhkan. Jika belum tahu jumlahnya, tanyakan kepada toko melalui WhatsApp.'};
-  if(!numeric&&/ongkir|kirim|pengiriman/.test(text))return {answer:'Radius kurang dari 10 km dari cabang terdekat (Gading atau Palur): Rp100.000.\nJarak 10 km ke atas atau luar kota: tarif melalui WhatsApp.\nAmbil di toko: tanpa ongkir.\n\nGunakan tombol “Gunakan lokasi saya” di bagian Pengiriman jika Anda berada di alamat tujuan, atau tulis “kirim luar kota”.'};
-  if(!numeric&&/bantu|ruangan|mulai|halo/.test(text))return {answer:'Pilih jenis karpet dahulu, lalu tulis ukuran ruangan atau panjang per lajur dan jumlahnya.\n\nContoh: “Medina 115 ruangan 10 × 5 m” atau “Medina 105 panjang 8 m × 20 lajur”.\n\nHitungan memakai pilihan pada formulir saat ini.'};
+  if(!numeric&&/obras|titik|sambung|lubang|lobang|tiang/.test(text))return {answer:'Biaya pengerjaan:\n• Obras: Rp10.000/titik\n• Sambung: Rp30.000/sambungan\n• Lubang / tiang: Rp50.000 per lubang/tiang\n\nContoh: 3 lubang/tiang × Rp50.000 = Rp150.000. Tulis “tiang 3”. Satu lubang untuk satu tiang dihitung satu kali.\n\nUntuk obras dan sambungan, isi jumlah pengerjaan yang dibutuhkan. Jika belum tahu jumlahnya, tanyakan kepada toko melalui WhatsApp.'};
+  if(!numeric&&/ongkir|kirim|pengiriman/.test(text))return {answer:'Radius kurang dari 10 km dari JJ Warehouse, Jl. Galuh I No. 3, Banyuanyar, Surakarta: Rp100.000.\nJarak 10 km ke atas atau luar kota: tarif melalui WhatsApp.\nAmbil di toko: tanpa ongkir.\n\nGunakan tombol “Gunakan lokasi saya” di bagian Pengiriman jika Anda berada di alamat tujuan, atau tulis “kirim luar kota”.'};
+  if(!numeric&&/bantu|ruangan|mulai|halo/.test(text))return {answer:'Pilih jenis karpet dahulu, lalu tulis ukuran ruangan atau panjang per baris dan jumlahnya.\n\nContoh: “Medina 115 ruangan 10 × 5 m” atau “Medina 105 panjang 8 m × 20 baris”.\n\nHitungan memakai pilihan pada formulir saat ini.'};
   if(!numeric&&!/hitung|total|pesan|book|wa|admin/.test(text))return {answer:'Saya membantu karpet sajadah, ukuran, harga, titik pengerjaan, dan pengiriman. Mulai dari “pilihan karpet” atau tulis jenis dan ukuran kebutuhan Anda.'};
-  try{const q=this.service.calculate({...context,...patch});return {order:q.order,quote:q,answer:q.product.name+' · Tinggi '+q.product.width+' cm\n'+(q.order.mode==='room'?'Ruangan '+q.order.roomLength+' × '+q.order.roomWidth+' m. Lajur mengikuti panjang ruangan.\n':'')+q.strips+' lajur × '+q.length+' m = '+q.meters+' meter\nHarga: '+rupiah(q.product.rate)+'/meter\n\nSubtotal: '+rupiah(q.subtotal)+'\nObras: '+rupiah(q.overlockCost)+'\nSambung: '+rupiah(q.seamCost)+'\nLubang / tiang: '+rupiah(q.pillarCost)+'\nOngkir: '+(q.shippingCost===null?'Belum diketahui':rupiah(q.shippingCost))+'\n\n'+(q.total===null?'Estimasi belum termasuk ongkir: ':'Estimasi total: ')+rupiah(q.knownTotal)+'\n'+toWords(q.knownTotal)+'\n\nStok dapat berubah. Lanjutkan lewat WhatsApp untuk memastikan ketersediaan dan total pesanan.'};}catch(error){return {answer:error.message+' Periksa ukuran atau jumlah titik pengerjaan.'};}
+  try{const q=this.service.calculate({...context,...patch});return {order:q.order,quote:q,answer:q.product.name+' · Tinggi '+q.product.width+' cm\n'+(q.order.mode==='room'?'Ruangan '+q.order.roomLength+' × '+q.order.roomWidth+' m. Baris mengikuti panjang ruangan.\n':'')+q.strips+' baris × '+q.length+' m = '+q.meters+' meter\nHarga: '+rupiah(q.product.rate)+'/meter\n\nSubtotal: '+rupiah(q.subtotal)+'\nObras: '+rupiah(q.overlockCost)+'\nSambung: '+rupiah(q.seamCost)+'\nLubang / tiang ('+q.order.pillars+' × Rp50.000): '+rupiah(q.pillarCost)+'\nOngkir: '+(q.shippingCost===null?'Belum diketahui':rupiah(q.shippingCost))+'\n\n'+(q.total===null?'Estimasi belum termasuk ongkir: ':'Estimasi total: ')+rupiah(q.knownTotal)+'\n'+toWords(q.knownTotal)+(q.advice.cutWidthCm?'\n\nBaris terakhir: potong lebar '+q.product.width+' → '+q.advice.lastRowWidthCm+' cm. Obras opsional.':'')+'\n\nStok dapat berubah. Lanjutkan lewat WhatsApp untuk memastikan ketersediaan dan total pesanan.'};}catch(error){return {answer:error.message+' Periksa ukuran atau jumlah titik pengerjaan.'};}
  }
 }
 
@@ -352,16 +368,16 @@ function calculateCarpet(){
  const room=field('carpetMode').value==='room';field('carpetLengthFields').hidden=room;field('carpetRoomFields').hidden=!room;
  for(const id of ['carpetLength','carpetQuantity'])field(id).disabled=room;
  for(const id of ['carpetRoomLength','carpetRoomWidth'])field(id).disabled=!room;
- field('carpetDirection').textContent=room?'Karpet dihitung memanjang searah panjang ruangan, dengan jumlah lajur yang cukup untuk menutup lebarnya. Sesuaikan arah pemasangan dengan shaf salat.':'Satu lajur adalah satu potongan karpet memanjang. Contoh: 4 lajur, masing-masing 8 m, membutuhkan 32 meter karpet.';
+ field('carpetDirection').textContent=room?'Karpet dihitung memanjang searah panjang ruangan, dengan jumlah baris yang cukup untuk menutup lebarnya. Sesuaikan arah pemasangan dengan shaf salat.':'Satu baris karpet berarti satu potongan yang dibentangkan memanjang. Contoh: 4 potongan sepanjang 8 m = isi panjang 8 dan jumlah baris 4.';
  try{
   const q=service.calculate({product:field('carpetProduct').value,mode:field('carpetMode').value,length:field('carpetLength').valueAsNumber,quantity:field('carpetQuantity').valueAsNumber,roomLength:field('carpetRoomLength').valueAsNumber,roomWidth:field('carpetRoomWidth').valueAsNumber,overlock:field('carpetOverlock').valueAsNumber,seams:field('carpetSeams').valueAsNumber,pillars:field('carpetPillars').valueAsNumber,delivery:field('carpetDelivery').value});
-  latestCarpetQuote=q;field('carpetError').hidden=true;field('carpetRate').textContent='Tinggi '+q.product.width+' cm · '+rupiah(q.product.rate)+' per meter panjang';field('carpetVariant').textContent=q.product.name+' · Tinggi '+q.product.width+' cm';
-  const rows=[['Kebutuhan',q.strips+' lajur × '+fmt(q.length)+' m'],['Total panjang',fmt(q.meters)+' meter'],['Subtotal karpet',rupiah(q.subtotal)],['Obras ('+q.order.overlock+' titik)',rupiah(q.overlockCost)],['Sambung ('+q.order.seams+' sambungan)',rupiah(q.seamCost)],['Lubang / tiang ('+q.order.pillars+' titik)',rupiah(q.pillarCost)],['Pengiriman',q.shippingCost===null?'Hubungi WhatsApp':q.order.delivery==='pickup'?'Ambil di toko':rupiah(q.shippingCost)+' · radius <10 km']];
+  latestCarpetQuote=q;field('carpetError').hidden=true;field('carpetAdvice').hidden=!q.advice.cutWidthCm;field('carpetAdvice').textContent=q.advice.cutWidthCm?'Baris terakhir: potong lebar '+q.product.width+' → '+fmt(q.advice.lastRowWidthCm)+' cm. Obras opsional.':'';field('carpetRate').textContent='Tinggi '+q.product.width+' cm · '+rupiah(q.product.rate)+' per meter panjang';field('carpetVariant').textContent=q.product.name+' · Tinggi '+q.product.width+' cm';
+  const rows=[['Kebutuhan',q.strips+' baris × '+fmt(q.length)+' m'],['Total panjang',fmt(q.meters)+' meter'],['Subtotal karpet',rupiah(q.subtotal)],['Obras ('+q.order.overlock+' titik)',rupiah(q.overlockCost)],['Sambung ('+q.order.seams+' sambungan)',rupiah(q.seamCost)],['Lubang / tiang ('+q.order.pillars+' × Rp50.000)',rupiah(q.pillarCost)],['Pengiriman',q.shippingCost===null?'Hubungi WhatsApp':q.order.delivery==='pickup'?'Ambil di toko':rupiah(q.shippingCost)+' · radius <10 km']];
   field('carpetDetails').replaceChildren();for(const [label,value] of rows){const row=document.createElement('div');const dt=document.createElement('dt');const dd=document.createElement('dd');dt.textContent=label;dd.textContent=value;row.append(dt,dd);field('carpetDetails').append(row);}
   field('carpetTotalLabel').textContent=q.total===null?'Estimasi belum termasuk ongkir':'Estimasi total';field('carpetTotal').textContent=rupiah(q.knownTotal);field('carpetWords').textContent=toWords(q.knownTotal);field('carpetPending').textContent=q.total===null?'Ongkir belum termasuk. Hubungi toko untuk tarif tujuan Anda.':'';
   const message=['Assalamu’alaikum, saya ingin pesan karpet sajadah.','',q.product.name+' · Tinggi '+q.product.width+' cm','Harga: '+rupiah(q.product.rate)+'/meter panjang',...rows.map(([label,value])=>label+': '+value),'',(q.total===null?'Estimasi belum termasuk ongkir: ':'Estimasi total: ')+rupiah(q.knownTotal),'Mohon cek stok, ukuran, titik pengerjaan, dan biaya pengiriman.'].join('\n');
   field('carpetWhatsapp').href='https://wa.me/6285105016189?text='+encodeURIComponent(message);field('carpetWhatsapp').removeAttribute('aria-disabled');
- }catch(error){latestCarpetQuote=null;field('carpetError').hidden=false;field('carpetError').textContent=error.message;field('carpetTotal').textContent='Periksa isian';field('carpetWords').textContent='Perbaiki isian untuk melihat estimasi terbaru.';field('carpetDetails').replaceChildren();field('carpetWhatsapp').removeAttribute('href');field('carpetWhatsapp').setAttribute('aria-disabled','true');}
+ }catch(error){latestCarpetQuote=null;field('carpetAdvice').hidden=true;field('carpetError').hidden=false;field('carpetError').textContent=error.message;field('carpetTotal').textContent='Periksa isian';field('carpetWords').textContent='Perbaiki isian untuk melihat estimasi terbaru.';field('carpetDetails').replaceChildren();field('carpetWhatsapp').removeAttribute('href');field('carpetWhatsapp').setAttribute('aria-disabled','true');}
 }
 field('carpetForm').addEventListener('submit',event=>event.preventDefault());field('carpetForm').addEventListener('input',calculateCarpet);field('carpetForm').addEventListener('change',calculateCarpet);
 field('carpetShowResult').addEventListener('click',()=>{const target=field('carpetError').hidden?field('carpetResult'):field('carpetError');target.scrollIntoView({behavior:'smooth',block:'start'});target.focus({preventScroll:true});});
@@ -412,11 +428,10 @@ class LocationService{
  });}
 }
 
-// Dibantu AI: titik cabang dicocokkan dengan Google Maps dan nomor resmi, 24 Oktober 2026.
-// Tarif memakai cabang terdekat sesuai arahan pemilik.
+// Dibantu AI: asal radius dikoreksi pemilik, 25 Oktober 2026.
+// Koordinat pin tujuan (bukan pusat tampilan peta) dari tautan pemilik.
 const storeLocations=Object.freeze([
- {name:'Toko Santri Gading',address:'Jl. Veteran No. 8, Joyosuran, Pasar Kliwon, Surakarta',latitude:-7.5842896,longitude:110.8288844,mapUrl:'https://www.google.com/maps/place/Toko+Santri+Gading/@-7.5842896,110.8288844,17z/data=!4m2!3m1!1s0x2e7a166a48235037:0x3a41ea02e290c9ed'},
- {name:'Toko Santri Palur',address:'Jl. Maospati–Solo, Jurug, Ngringo, Jaten, Karanganyar',latitude:-7.566348,longitude:110.866831,mapUrl:'https://www.google.com/maps/place/Toko+Santri+Palur/@-7.566348,110.866831,17z/data=!4m2!3m1!1s0x2e7a17a804286687:0x91152feac181f90d'}
+ {name:'JJ Warehouse',address:'Jl. Galuh I No. 3, Banyuanyar, Banjarsari, Surakarta 57137',latitude:-7.538725,longitude:110.8060307,mapUrl:'https://maps.app.goo.gl/NWjaSSgbBLVTQu1J7'}
 ]);
 
 // Dibantu AI: lokasi hanya diakses melalui tindakan pelanggan.
@@ -426,7 +441,7 @@ const storeLocations=Object.freeze([
  const branches=storeLocations;
  if(branches.length){
   get('carpetLocation').hidden=false;
-  get('carpetStoreName').textContent='Cek jarak dari cabang terdekat';
+  get('carpetStoreName').textContent='Cek jarak dari gudang';
   for(const branch of branches){const item=document.createElement('p');const link=document.createElement('a');link.textContent=branch.name+' — '+branch.address+' ↗';link.href=branch.mapUrl;link.target='_blank';link.rel='noopener noreferrer';item.append(link);get('carpetStoreAddress').append(item);}
   const locator=new LocationService(navigator.geolocation);
   let requestId=0;let lastResult=null;
@@ -440,7 +455,7 @@ const storeLocations=Object.freeze([
     const point=await locator.request();if(current!==requestId)return;
     const result=RadiusService.nearest(branches,point);lastResult=result;
     const km=result.distanceKm.toLocaleString('id-ID',{minimumFractionDigits:1,maximumFractionDigits:2});
-    const lead='Cabang terdekat: '+result.branch.name+'. Jarak'+': '+km+' km (garis lurus). Akurasi lokasi ±'+Math.ceil(result.accuracyMeters)+' meter. ';
+    const lead='Jarak dari '+result.branch.name+': '+km+' km (garis lurus). Akurasi lokasi ±'+Math.ceil(result.accuracyMeters)+' meter. ';
     get('carpetLocationStatus').textContent=lead+(result.zone==='inside'?'Lokasi ini berada dalam radius 10 km. Jika ini alamat kirim Anda dan masih dalam kota, gunakan tarif lokal di bawah.':result.zone==='outside'?'Lokasi ini berjarak 10 km atau lebih. Minta tarif pengiriman melalui WhatsApp.':'Lokasi terlalu dekat dengan batas 10 km untuk memastikan tarif. Coba cari lokasi lagi atau tanyakan ongkir melalui WhatsApp.');
     get('carpetUseLocal').hidden=result.zone!=='inside';
     if(result.zone!=='inside'){get('carpetDelivery').value='quote';get('carpetDelivery').dispatchEvent(new Event('change',{bubbles:true}));}

@@ -11,8 +11,8 @@ export class AssistantService {
   async reply(message,context,env={},requestFn=fetch,conversation={}){
     const text=message.toLowerCase().trim();let intent='unknown';let mode='rules';let patch={};let roomNote='';
     const number=value=>Number(value.replace(',','.'));
-    const rollPair=text.match(/(-?\d+(?:[.,]\d+)?)\s*(cm|meter|m)\s*[x×]\s*(-?\d+(?:[.,]\d+)?)\s*roll?\b/);
-    const reverseRollPair=text.match(/(-?\d+(?:[.,]\d+)?)\s*roll?\s*[x×]\s*(-?\d+(?:[.,]\d+)?)\s*(cm|meter|m)\b/);
+    const rollPair=text.match(/(-?\d+(?:[.,]\d+)?)\s*(cm|meter|m)\s*[x×]\s*(-?\d+(?:[.,]\d+)?)\s*(?:roll?|baris)\b/);
+    const reverseRollPair=text.match(/(-?\d+(?:[.,]\d+)?)\s*(?:roll?|baris)\s*[x×]\s*(-?\d+(?:[.,]\d+)?)\s*(cm|meter|m)\b/);
     const explicitRoll=Boolean(rollPair||reverseRollPair);
     const pair=!explicitRoll&&text.match(/(-?\d+(?:[.,]\d+)?)\s*(cm|m|meter)?\s*[x×]\s*(-?\d+(?:[.,]\d+)?)\s*(cm|m|meter)?\b/);
     const room=/ruang|mush?ol+ah?|musala|masjid/.test(text);
@@ -38,7 +38,7 @@ export class AssistantService {
       roomNote='Saya baca panjang '+patch.roomLength+' m × lebar '+patch.roomWidth+' m'+(!pair[2]&&!pair[4]?' (asumsi satuan meter)':'')+'.';
     }else if(room&&namedLength&&namedWidth){patch.mode='room';patch.roomLength=toMeters(namedLength[1],namedLength[2]);patch.roomWidth=toMeters(namedWidth[1],namedWidth[2]);roomNote='Panjang '+patch.roomLength+' m × lebar '+patch.roomWidth+' m.';}
     const length=!explicitRoll&&!pair&&!room?text.match(/(?:panjang\s*)?(-?\d+(?:[.,]\d+)?)\s*(meter|m)\b/):null;
-    const count=text.match(/(\d+)\s*(?:rol|roll)\b/);
+    const count=text.match(/(\d+)\s*(?:rol|roll|baris)\b/);
     if(length){patch.length=number(length[1]);patch.mode='roll';}if(count&&!explicitRoll&&!pair&&!room){patch.quantity=Number(count[1]);patch.mode='roll';}
     const hasSize=Boolean(explicitRoll||pair||(room&&namedLength&&namedWidth)||length||count);
     const discovery=/apa saja|apa aja|pilihan|tersedia|ada ukuran|ukuran apa|jual apa/.test(text);
@@ -81,8 +81,8 @@ export class AssistantService {
       try{
         const q=this.quoteService.calculate({...context,...patch});order=q.order;
         answer=q.subtotal===null?'Harga varian ini belum tersedia. Silakan konfirmasi ke Toko Santri.':[
-          [roomNote,q.order.mode==='room'?'Tikar '+q.order.color+', lebar '+q.order.width+' cm.\nLajur memanjang mengikuti panjang ruangan.':''].filter(Boolean).join('\n'),
-          [q.strips+' rol/lajur × '+q.meters/q.strips+' meter',
+          [roomNote,q.order.mode==='room'?'Tikar '+q.order.color+', lebar '+q.order.width+' cm.\nBaris karpet memanjang mengikuti panjang ruangan.':''].filter(Boolean).join('\n'),
+          [q.strips+' rol/baris × '+q.meters/q.strips+' meter',
             'Harga per meter: '+rupiah(q.rate),
             'Subtotal tikar: '+rupiah(q.subtotal),
             q.trimCost?'Plisir: '+rupiah(q.trimCost):'',
@@ -118,7 +118,7 @@ export class AssistantService {
 // Dibantu AI: ringkasan pemesanan dari hitungan terverifikasi.
 export function bookingLink(quote,destination=''){
   const lines=['Assalamu’alaikum, saya ingin pesan tikar Toko Santri.'];
-  if(quote){const q=quote;const o=q.order;lines.push('', 'Tikar rol '+o.color+', lebar '+o.width+' cm', ...(o.mode==='room'?['Ruangan: '+o.roomLength+' × '+o.roomWidth+' m']:[]),q.strips+' rol/lajur × '+q.meters/q.strips+' m','Tulisan: '+(o.writing?'Ya':'Tidak'),'Plisir dua ujung: '+(o.trim?rupiah(q.trimCost):'Tidak'),'Packing: '+(o.packing==='extra'?(q.packingCost===null?'Biaya belum diketahui':rupiah(q.packingCost)+' · '+q.bagCount+' karung'):'Standar'),'Subtotal tikar: '+rupiah(q.subtotal),'Pengiriman: '+(o.shipping==='pickup'?'Ambil di toko':'Indah Cargo'),'Ongkir: '+(q.shippingSource==='pickup'?'Tanpa ongkir':q.shippingSource==='manual'?rupiah(q.shippingCost)+' (input pelanggan, belum diverifikasi)':'Belum diketahui'),(q.total===null?'Biaya diketahui: ':'Estimasi total: ')+rupiah(q.knownTotal),...(q.pending.length?['Belum termasuk: '+q.pending.join(', ')]:[]));}
+  if(quote){const q=quote;const o=q.order;lines.push('', 'Tikar rol '+o.color+', lebar '+o.width+' cm', ...(o.mode==='room'?['Ruangan: '+o.roomLength+' × '+o.roomWidth+' m']:[]),q.strips+' rol/baris × '+q.meters/q.strips+' m','Tulisan: '+(o.writing?'Ya':'Tidak'),'Plisir dua ujung: '+(o.trim?rupiah(q.trimCost):'Tidak'),'Packing: '+(o.packing==='extra'?(q.packingCost===null?'Biaya belum diketahui':rupiah(q.packingCost)+' · '+q.bagCount+' karung'):'Standar'),'Subtotal tikar: '+rupiah(q.subtotal),'Pengiriman: '+(o.shipping==='pickup'?'Ambil di toko':'Indah Cargo'),'Ongkir: '+(q.shippingSource==='pickup'?'Tanpa ongkir':q.shippingSource==='manual'?rupiah(q.shippingCost)+' (input pelanggan, belum diverifikasi)':'Belum diketahui'),(q.total===null?'Biaya diketahui: ':'Estimasi total: ')+rupiah(q.knownTotal),...(q.pending.length?['Belum termasuk: '+q.pending.join(', ')]:[]));}
   if(destination.trim())lines.push('Tujuan: '+destination.trim());
   lines.push('','Mohon cek stok, rincian biaya, dan ketersediaan pesanan.');
   return 'https://wa.me/6285105016189?text='+encodeURIComponent(lines.join('\n'));

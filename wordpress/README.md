@@ -36,3 +36,15 @@ Audit 24 Oktober: petunjuk berorientasi tindakan, contoh jumlah titik, istilah b
 Geolokasi karpet memakai `services/location.js`, `store-location.js`, dan `location-app.js`. Titik Gading dan Palur dicocokkan di Google Maps (nomor 085105016189). Pemilik menetapkan cabang terdekat sebagai asal tarif. Perhitungan Haversine berjalan lokal, tanpa API rute, database, atau pengiriman koordinat pelanggan ke toko. Ini radius garis lurus, bukan jarak jalan. Pelanggan menekan tombol lokasi dan mengizinkan akses browser, lalu memastikan tujuan dalam kota sebelum menerapkan Rp100.000. Tujuan di luar radius atau akurasi yang melintasi 10 km tetap meminta penawaran. Reset membatalkan hasil permintaan yang belum selesai. Lokasi tidak disertakan dalam tautan WhatsApp.
 
 84 pengujian lulus, termasuk pilihan cabang terdekat, batas radius dengan akurasi GPS, koordinat tidak valid, izin ditolak, dan timeout. GPS perangkat sungguhan belum dipakai dalam verifikasi; kasus lokasi diuji dengan data simulasi. Ongkir Indah Cargo tikar tetap melalui cek tarif resmi, bukan API otomatis.
+
+## Saran Pemasangan
+
+Istilah pelanggan memakai “baris karpet” (satu potongan memanjang), termasuk chat dan rincian WhatsApp. Parser tetap menerima “lajur”, “rol”, dan “baris”. Mode ruangan memberi saran potong berdasarkan kelebihan lebar, lebar baris terakhir, pertimbangan obras pada tepi potong, serta sambungan opsional untuk menyatukan baris. Saran tidak mengasumsikan satu sudut = satu titik dan tidak menambah jasa otomatis. Estimasi bahan tetap memakai lebar penuh. Panjang maksimum rol pabrik belum diketahui sehingga sambungan arah panjang tidak ditebak. 93 pengujian lulus setelah pembaruan ini.
+
+## Koreksi 25 Oktober 2026
+
+Acuan radius pengiriman diganti menjadi JJ Warehouse, Jl. Galuh I No. 3, Banyuanyar, Banjarsari, Surakarta 57137. Ini menggantikan aturan cabang terdekat sebelumnya. Koordinat pin pada tautan pemilik: -7.538725, 110.8060307 (jangan memakai koordinat pusat viewport peta). Semua label lokasi dan jawaban ongkir chatbot sudah mengikuti gudang. Nomor pemesanan tetap nomor Toko Santri.
+
+Blok “Saran potong & pemasangan” dihapus dari UI dan balasan chat. Jika ada kelebihan lebar, hanya satu baris ukuran potong ditampilkan. Jumlah jasa tetap input pelanggan karena aturan konversi sisi menjadi titik belum ditetapkan pemilik. 94 pengujian lulus, termasuk lokasi yang berada dalam radius gudang tetapi di luar radius cabang lama.
+
+Tarif lubang/tiang dikonfirmasi pemilik 25 Oktober: jumlah lubang/tiang × Rp50.000 (3 = Rp150.000), satu lubang untuk satu tiang dihitung satu kali. Label `/titik` untuk jasa ini diganti di formulir, ringkasan, WhatsApp, dan chatbot. Satuan obras tidak diubah.
