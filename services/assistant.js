@@ -21,7 +21,7 @@ export class AssistantService {
     const toMeters=(value,unit)=>number(value)/(unit==='cm'?100:1);
     const widthChoice=text.match(/\b(95|120)\s*cm\b/ )||((conversation.awaitingWidth||/lebar/.test(text))?text.match(/\b(95|120)\b/):null);
     const color=text.match(/\b(hijau|krem|biru|marun)\b/);
-    if(/karpet/.test(text))return {answer:'Kalkulator ini khusus tikar rol. Mau lihat pilihan lebar tikar atau hitung kebutuhan ruangan?',mode,handled:true,choices:[{label:'Pilihan tikar',message:'Tikar ada ukuran apa saja?'}]};if(/tikar/.test(text))patch.product='tikar';
+    if(/karpet/.test(text))return {answer:'Anda sedang memakai kalkulator tikar rol. Untuk menghitung karpet, tutup chat lalu pilih “Karpet Sajadah” di bagian atas halaman.',mode,handled:true,choices:[{label:'Pilihan tikar',message:'Tikar ada ukuran apa saja?'}]};if(/tikar/.test(text))patch.product='tikar';
     if(color)patch.color=color[1];
     if(/tanpa plisir/.test(text))patch.trim=false;else if(/pakai plisir|dengan plisir/.test(text))patch.trim=true;
     if(/tanpa packing/.test(text))patch.packing='standard';else if(/pakai packing|dengan packing/.test(text))patch.packing='extra';
@@ -52,7 +52,7 @@ export class AssistantService {
     else if(conversation.awaitingWidth&&!widthChoice&&color){return {answer:'Warna '+color[1]+' saya catat. Mau lebar 95 cm atau 120 cm?',mode,handled:true,conversation:{...conversation,draft:{...conversation.draft,...patch}},choices:[{label:'Lebar 95 cm',message:'Pilih lebar 95 cm'},{label:'Lebar 120 cm',message:'Pilih lebar 120 cm'}]};}
     else if(/\b(book(?:ing)?|pesan|order|beli|whatsapp|wa|admin)\b/.test(text)){
       if(conversation.awaitingWidth)return {answer:'Sebelum lanjut pesan, mau lebar 95 cm atau 120 cm?',mode,handled:true,conversation,choices:[{label:'Lebar 95 cm',message:'Pilih lebar 95 cm'},{label:'Lebar 120 cm',message:'Pilih lebar 120 cm'}]};
-      if(conversation.widthConfirmed)return {answer:'Silakan lanjut lewat tombol WhatsApp di bawah. Rincian hitungan terakhir ikut terisi.\n\nKirim pesannya untuk meminta pemesanan; stok dan ongkir akan dicek admin.',mode,handled:true,order:this.quoteService.calculate(context).order,conversation};
+      if(conversation.widthConfirmed)return {answer:'Silakan lanjut lewat tombol WhatsApp di bawah. Rincian hitungan terakhir ikut terisi.\n\nKirim pesan tersebut agar toko dapat memeriksa stok dan ongkir pesanan Anda.',mode,handled:true,order:this.quoteService.calculate(context).order,conversation};
       return {answer:'Bisa. Hubungi admin lewat WhatsApp, atau hitung kebutuhan tikar terlebih dahulu agar rincian pesanan ikut terisi.',mode,handled:true,contact:true,choices:[{label:'Hitung kebutuhan',message:'Bantu hitung ruangan'}]};
     }
     else if(discovery&&/ukuran|lebar|tikar/.test(text))intent='sizes';
@@ -91,7 +91,7 @@ export class AssistantService {
           ].filter(Boolean).join('\n'),
           'Estimasi '+(q.total===null?'biaya diketahui':'total')+': '+rupiah(q.knownTotal)+'\nTerbilang: '+q.words+'.',
           'Sumber: '+q.rateSource.label+'.'+(['benchmark','assumption'].includes(q.rateSource.kind)?'\n'+q.rateSource.note:''),
-          q.isFinal?'Ini estimasi, bukan invoice.':q.pending.join(', ')+' masih perlu konfirmasi; angka di atas belum total akhir.'
+          q.isFinal?'Ini perkiraan biaya. Toko akan memastikan total pesanan melalui WhatsApp.':q.pending.join(', ')+' masih perlu konfirmasi; angka di atas belum total akhir.'
         ].filter(Boolean).join('\n\n');
       }
       catch(error){answer=error.message;}
@@ -107,7 +107,7 @@ export class AssistantService {
     else if(intent==='writing'){
       const width=/95\s*cm/.test(text)?95:/120\s*cm/.test(text)?120:context.width;
       const q=this.quoteService.calculate({...context,width,writing:true,shipping:'pickup',shippingCost:null,trim:false,packing:'standard',mode:'roll',length:1,quantity:1});
-      answer='Tikar '+width+' cm dengan tulisan: '+rupiah(q.rate)+'/meter untuk simulasi. '+q.rateSource.note+' Minimum pesanan, desain, dan tarif final perlu konfirmasi toko.';
+      answer='Tikar '+width+' cm dengan tulisan: '+rupiah(q.rate)+'/meter. '+q.rateSource.note+' Sampaikan nama dan desain yang diinginkan melalui WhatsApp.';
     }
     else answer='Saya belum menangkap maksudnya. Saya hanya membantu kebutuhan belanja Toko Santri. Anda bisa mulai dari pilihan tikar, atau tulis ukuran lantai, misalnya 30 × 10 meter.';
     const choices=['welcome','sizes','unknown'].includes(intent)?[{label:'Lihat pilihan tikar',message:'Tikar ada ukuran apa saja?'},{label:'Hitung ruangan',message:'Bantu hitung ruangan'}]:intent==='roomGuide'?[{label:'Lihat pilihan tikar',message:'Tikar ada ukuran apa saja?'}]:[];

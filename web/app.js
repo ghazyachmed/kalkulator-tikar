@@ -35,16 +35,16 @@ function update(){
     select('rateText').textContent=rupiah(q.rate);select('subtotalText').textContent=rupiah(q.subtotal);
     select('extraText').textContent=order.trim||order.packing==='extra'?'Plisir '+rupiah(q.trimCost)+' · Packing '+rupiah(q.packingCost)+(q.bagCount?' ('+q.bagCount+' karung)':''):'Tanpa tambahan';
     select('deliveryText').textContent=order.shipping==='pickup'?'Ambil di toko':q.shippingSource==='manual'?rupiah(q.shippingCost)+'*':order.shipping==='cargo'?'Indah Cargo · isi ongkir':'Indah Cargo · isi ongkir';
-    select('totalLabel').textContent=q.total===null?'Biaya yang sudah diketahui':q.shippingSource==='manual'?'Estimasi + ongkir input Anda':'Estimasi total belanja';
+    select('totalLabel').textContent=q.total===null?'Estimasi sementara':q.shippingSource==='manual'?'Estimasi termasuk ongkir yang Anda isi':'Estimasi total belanja';
     select('totalText').textContent=rupiah(q.total??q.knownTotal);select('totalText').style.fontSize=q.subtotal===null?'23px':'';
     select('wordsText').textContent=q.words?(q.total===null?'Biaya diketahui: ':'')+q.words.charAt(0).toUpperCase()+q.words.slice(1)+'.':'Harga belum tersedia untuk varian ini.';
     select('pendingText').hidden=q.pending.length===0;select('pendingText').textContent='Belum termasuk: '+q.pending.join(', ')+'.';
-    select('shippingFields').hidden=order.shipping==='pickup';select('cargoTools').hidden=order.shipping!=='cargo';select('shippingHint').textContent=order.shipping==='pickup'?'Gratis ongkir: ambil sendiri di toko.':q.shippingSource==='manual'?'Ongkir yang Anda masukkan sudah dijumlahkan.':'Cek tarif Indah untuk menambahkan ongkir.';
+    select('shippingFields').hidden=order.shipping==='pickup';select('cargoTools').hidden=order.shipping!=='cargo';select('shippingHint').textContent=order.shipping==='pickup'?'Tanpa ongkir karena pesanan diambil di toko.':q.shippingSource==='manual'?'Ongkir yang Anda masukkan sudah dijumlahkan.':'Cek tarif Indah untuk menambahkan ongkir.';
     select('layoutText').textContent=`${q.strips} ${order.mode==='room'?'lajur':'rol'} × ${q.meters/q.strips} meter · ${q.area.toLocaleString('id-ID')} m²${order.trim?' · Plisir '+q.strips+' rol (dua ujung)':''}`;
     select('planStrips').replaceChildren();for(let i=0;i<Math.min(q.strips,8);i++){const strip=document.createElement('div');strip.className='planStrip';strip.textContent=(q.meters/q.strips)+' m × '+order.width+' cm';select('planStrips').append(strip);}if(q.strips>8){const more=document.createElement('span');more.className='hint';more.textContent='+ '+(q.strips-8)+' rol/lajur lainnya';select('planStrips').append(more);}
     select('whatsapp').href='https://wa.me/6285105016189?text='+encodeURIComponent('Assalamu’alaikum, saya ingin konfirmasi pesanan berikut.\n\n'+receipt());select('whatsapp').removeAttribute('aria-disabled');
     for(const id of ['share','download','printQuote'])select(id).disabled=false;
-  }catch(error){valid=false;select('formError').textContent=error.message;select('formError').hidden=false;select('totalText').textContent='Periksa input';select('wordsText').textContent='Perbaiki ukuran untuk melihat estimasi terbaru.';select('whatsapp').removeAttribute('href');select('whatsapp').setAttribute('aria-disabled','true');for(const id of ['share','download','printQuote'])select(id).disabled=true;}
+  }catch(error){valid=false;select('formError').textContent=error.message;select('formError').hidden=false;select('totalText').textContent='Periksa isian';select('wordsText').textContent='Perbaiki ukuran untuk melihat estimasi terbaru.';select('whatsapp').removeAttribute('href');select('whatsapp').setAttribute('aria-disabled','true');for(const id of ['share','download','printQuote'])select(id).disabled=true;}
 }
 select('showResult').addEventListener('click',()=>{if(!valid){select('formError').scrollIntoView({block:'center'});return;}select('quoteResult').scrollIntoView({behavior:'smooth',block:'start'});select('quoteResult').focus({preventScroll:true});});
 select('quoteForm').addEventListener('submit',event=>event.preventDefault());
@@ -63,7 +63,7 @@ async function ask(message){
   document.querySelectorAll('[data-question]').forEach(button=>button.disabled=true);
   select('chatInput').value='';bubble(message,true);const pending=bubble('Sedang menyiapkan jawaban…');pending.classList.add('loadingBubble');
   select('chatStatus').textContent='Sedang menyiapkan jawaban…';
-  const slowTimer=setTimeout(()=>{select('chatStatus').textContent='Masih menghubungkan asisten. Kalkulator tetap bisa digunakan.';},1800);
+  const slowTimer=setTimeout(()=>{select('chatStatus').textContent='Jawaban sedang disiapkan. Kalkulator tetap bisa digunakan.';},1800);
   try{
     const result=await localAssistant.respond(message,chatContext||order,async()=>{
       const response=await fetch('/api/chat',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({message,context:chatContext||order}),signal:AbortSignal.timeout(5500)});
