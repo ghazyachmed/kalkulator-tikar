@@ -44,7 +44,7 @@ export class AssistantService {
     else if(conversation.awaitingWidth&&!widthChoice&&color){return {answer:'Warna '+color[1]+' saya catat. Mau lebar 95 cm atau 120 cm?',mode,handled:true,conversation:{...conversation,draft:{...conversation.draft,...patch}},choices:[{label:'Lebar 95 cm',message:'Pilih lebar 95 cm'},{label:'Lebar 120 cm',message:'Pilih lebar 120 cm'}]};}
     else if(/\b(book(?:ing)?|pesan|order|beli|whatsapp|wa|admin)\b/.test(text)){
       if(conversation.awaitingWidth)return {answer:'Sebelum lanjut pesan, mau lebar 95 cm atau 120 cm?',mode,handled:true,conversation,choices:[{label:'Lebar 95 cm',message:'Pilih lebar 95 cm'},{label:'Lebar 120 cm',message:'Pilih lebar 120 cm'}]};
-      if(conversation.widthConfirmed)return {answer:'Silakan lanjut lewat tombol WhatsApp di bawah. Rincian hitungan terakhir ikut terisi. Kirim pesannya untuk meminta pemesanan; stok dan ongkir akan dicek admin.',mode,handled:true,order:this.quoteService.calculate(context).order,conversation};
+      if(conversation.widthConfirmed)return {answer:'Silakan lanjut lewat tombol WhatsApp di bawah. Rincian hitungan terakhir ikut terisi.\n\nKirim pesannya untuk meminta pemesanan; stok dan ongkir akan dicek admin.',mode,handled:true,order:this.quoteService.calculate(context).order,conversation};
       return {answer:'Bisa. Hubungi admin lewat WhatsApp, atau hitung kebutuhan tikar terlebih dahulu agar rincian pesanan ikut terisi.',mode,handled:true,contact:true,choices:[{label:'Hitung kebutuhan',message:'Bantu hitung ruangan'}]};
     }
     else if(discovery&&/ukuran|lebar|tikar/.test(text))intent='sizes';
@@ -70,17 +70,32 @@ export class AssistantService {
     let answer;let order;
     if(intent==='quote'){
       if(['length','quantity','width','mode','roomWidth','roomLength'].some(key=>Object.hasOwn(patch,key)&&patch[key]!==context[key]))patch.shippingCost=null;
-      try{const q=this.quoteService.calculate({...context,...patch});order=q.order;answer=q.subtotal===null?'Harga varian ini belum tersedia. Silakan konfirmasi ke Toko Santri.':`${roomNote?roomNote+'\n':''}${q.order.mode==='room'?'Tikar '+q.order.color+', lebar '+q.order.width+' cm. Lajur memanjang mengikuti panjang ruangan.\n':''}${q.strips} rol/lajur × ${q.meters/q.strips} meter × ${rupiah(q.rate)} = ${rupiah(q.subtotal)}. ${q.shippingSource==='manual'?'Ditambah ongkir input pelanggan '+rupiah(q.shippingCost)+', estimasi total '+rupiah(q.total)+'. ':''}${q.trimCost?'Plisir '+rupiah(q.trimCost)+'. ':''}${q.packingCost?'Packing '+q.bagCount+' karung: '+rupiah(q.packingCost)+'. ':''}Estimasi ${q.total===null?'biaya diketahui':'total'}: ${rupiah(q.knownTotal)}. Terbilang: ${q.words}. Sumber: ${q.rateSource.label}. ${q.rateSource.kind==='benchmark'||q.rateSource.kind==='assumption'?q.rateSource.note:''} ${q.isFinal?'Ini estimasi, bukan invoice.':q.pending.join(', ')+' masih perlu konfirmasi; angka di atas belum total akhir.'}`;}
+      try{
+        const q=this.quoteService.calculate({...context,...patch});order=q.order;
+        answer=q.subtotal===null?'Harga varian ini belum tersedia. Silakan konfirmasi ke Toko Santri.':[
+          [roomNote,q.order.mode==='room'?'Tikar '+q.order.color+', lebar '+q.order.width+' cm.\nLajur memanjang mengikuti panjang ruangan.':''].filter(Boolean).join('\n'),
+          [q.strips+' rol/lajur × '+q.meters/q.strips+' meter',
+            'Harga per meter: '+rupiah(q.rate),
+            'Subtotal tikar: '+rupiah(q.subtotal),
+            q.trimCost?'Plisir: '+rupiah(q.trimCost):'',
+            q.packingCost?'Packing '+q.bagCount+' karung: '+rupiah(q.packingCost):'',
+            q.shippingSource==='manual'?'Ongkir input pelanggan: '+rupiah(q.shippingCost):''
+          ].filter(Boolean).join('\n'),
+          'Estimasi '+(q.total===null?'biaya diketahui':'total')+': '+rupiah(q.knownTotal)+'\nTerbilang: '+q.words+'.',
+          'Sumber: '+q.rateSource.label+'.'+(['benchmark','assumption'].includes(q.rateSource.kind)?'\n'+q.rateSource.note:''),
+          q.isFinal?'Ini estimasi, bukan invoice.':q.pending.join(', ')+' masih perlu konfirmasi; angka di atas belum total akhir.'
+        ].filter(Boolean).join('\n\n');
+      }
       catch(error){answer=error.message;}
      }else if(intent==='shipping'){
       const q=this.quoteService.calculate(context);const p=new ShippingService().estimateOrder(q,q.order.cargoService);
-      answer=p?'Perkiraan untuk pilihan kalkulator Anda: '+p.packageCount+' paket, berat bahan + packing sekitar '+p.actualWeight.toLocaleString('id-ID',{maximumFractionDigits:2})+' kg, berat volume '+(q.order.cargoService==='air'?'udara':q.order.cargoService==='sea'?'laut':'darat')+' sekitar '+p.volumeWeight.toLocaleString('id-ID',{maximumFractionDigits:2})+' kg. Dasar berat: benchmark Swan 3 kg/6,8 × 0,95 m; dimensi dan packing memakai asumsi. Konfirmasi hasil timbang dan tarif Indah berdasarkan asal/tujuan. Ongkir belum dihitung otomatis.':'Berat dan ongkir produk ini perlu konfirmasi toko. Model perkiraan paket saat ini hanya tersedia untuk tikar rol.';
+      answer=p?'Perkiraan untuk pilihan kalkulator Anda: '+p.packageCount+' paket.\nBerat bahan + packing: sekitar '+p.actualWeight.toLocaleString('id-ID',{maximumFractionDigits:2})+' kg.\nBerat volume '+(q.order.cargoService==='air'?'udara':q.order.cargoService==='sea'?'laut':'darat')+' sekitar '+p.volumeWeight.toLocaleString('id-ID',{maximumFractionDigits:2})+' kg.\n\nDasar berat: benchmark Swan 3 kg/6,8 × 0,95 m; dimensi dan packing memakai asumsi.\n\nKonfirmasi hasil timbang dan tarif Indah berdasarkan asal/tujuan. Ongkir belum dihitung otomatis.':'Berat dan ongkir produk ini perlu konfirmasi toko. Model perkiraan paket saat ini hanya tersedia untuk tikar rol.';
     }
-    else if(intent==='sizes')answer='Tikar rol bisa dipesan sesuai panjang kebutuhan. Pilihan di kalkulator: lebar 120 cm dan 95 cm.\n120 cm: Rp35.000/m; dengan tulisan Rp38.000/m. 95 cm: Rp31.000/m; dengan tulisan Rp37.000/m.\nMau menutup ruangan, atau sudah tahu panjang tikarnya?';
-    else if(intent==='welcome')answer='Saya bantu dari awal. Di sini Anda bisa menghitung tikar rol untuk ruangan atau panjang pesanan. Ada pilihan warna dan tulisan nama.\nMau lihat pilihan tikar atau hitung ukuran ruangan?';
-    else if(intent==='roomGuide')answer='Boleh. Berapa panjang × lebar lantainya? Contoh: 30 × 10 meter. Setelah itu saya bantu pilih lebar tikar dan hitung kebutuhannya.';
-    else if(intent==='extras')answer='Plisir dua ujung: Rp20.000 per rol. Packing: Rp50.000 per karung. Untuk rol panjang 10 m, satu karung berisi 6 rol; panjang 6 m berisi 10 rol. Jumlah karung dibulatkan ke atas. Kapasitas panjang lain perlu ditentukan toko.';
-    else if(intent==='colors')answer='Tikar rol tersedia dalam pilihan hijau, krem, biru, dan merah marun. Ketersediaan stok dikonfirmasi saat pemesanan.';
+    else if(intent==='sizes')answer='Tikar rol bisa dipesan sesuai panjang kebutuhan. Pilihan di kalkulator: lebar 120 cm dan 95 cm.\n\n120 cm: Rp35.000/m; dengan tulisan Rp38.000/m.\n\n95 cm: Rp31.000/m; dengan tulisan Rp37.000/m.\n\nMau menutup ruangan, atau sudah tahu panjang tikarnya?';
+    else if(intent==='welcome')answer='Saya bantu dari awal. Di sini Anda bisa menghitung tikar rol untuk ruangan atau panjang pesanan. Ada pilihan warna dan tulisan nama.\n\nMau lihat pilihan tikar atau hitung ukuran ruangan?';
+    else if(intent==='roomGuide')answer='Boleh. Berapa panjang × lebar lantainya?\n\nContoh: 30 × 10 meter.\n\nSetelah itu saya bantu pilih lebar tikar dan hitung kebutuhannya.';
+    else if(intent==='extras')answer='Plisir dua ujung: Rp20.000 per rol.\nPacking: Rp50.000 per karung.\n\nIsi per karung:\n• Panjang 10 m: 6 rol\n• Panjang 6 m: 10 rol\n\nJumlah karung dibulatkan ke atas.\nKapasitas panjang lain perlu ditentukan toko.';
+    else if(intent==='colors')answer='Tikar rol tersedia dalam pilihan hijau, krem, biru, dan merah marun.\n\nKetersediaan stok dikonfirmasi saat pemesanan.';
     else if(intent==='writing'){
       const width=/95\s*cm/.test(text)?95:/120\s*cm/.test(text)?120:context.width;
       const q=this.quoteService.calculate({...context,width,writing:true,shipping:'pickup',shippingCost:null,trim:false,packing:'standard',mode:'roll',length:1,quantity:1});
