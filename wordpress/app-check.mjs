@@ -238,7 +238,7 @@ function update(){
     select('totalText').textContent=rupiah(q.total??q.knownTotal);select('totalText').style.fontSize=q.subtotal===null?'23px':'';
     select('wordsText').textContent=q.words?(q.total===null?'Biaya diketahui: ':'')+q.words.charAt(0).toUpperCase()+q.words.slice(1)+'.':'Harga belum tersedia untuk varian ini.';
     select('pendingText').hidden=q.pending.length===0;select('pendingText').textContent='Belum termasuk: '+q.pending.join(', ')+'.';
-    select('shippingFields').hidden=order.shipping==='pickup';select('cargoTools').hidden=order.shipping!=='cargo';select('shippingHint').textContent=order.shipping==='pickup'?'Tanpa ongkir karena pesanan diambil di toko.':q.shippingSource==='manual'?'Ongkir yang Anda masukkan sudah dijumlahkan.':'Cek tarif Indah untuk menambahkan ongkir.';
+    select('shippingFields').hidden=order.shipping==='pickup';select('cargoTools').hidden=order.shipping!=='cargo';select('shippingHint').textContent=order.shipping==='pickup'?'Tanpa ongkir.':q.shippingSource==='manual'?'Ongkir sudah termasuk.':'Cek tarif Indah untuk menambahkan ongkir.';
     select('layoutText').textContent=`${q.strips} ${order.mode==='room'?'baris':'rol'} × ${q.meters/q.strips} meter · ${q.area.toLocaleString('id-ID')} m²${order.trim?' · Plisir '+q.strips+' rol (dua ujung)':''}`;
     select('planStrips').replaceChildren();for(let i=0;i<Math.min(q.strips,8);i++){const strip=document.createElement('div');strip.className='planStrip';strip.textContent=(q.meters/q.strips)+' m × '+order.width+' cm';select('planStrips').append(strip);}if(q.strips>8){const more=document.createElement('span');more.className='hint';more.textContent='+ '+(q.strips-8)+' rol/baris lainnya';select('planStrips').append(more);}
     select('whatsapp').href='https://wa.me/6285105016189?text='+encodeURIComponent('Assalamu’alaikum, saya ingin konfirmasi pesanan berikut.\n\n'+receipt());select('whatsapp').removeAttribute('aria-disabled');
@@ -389,13 +389,13 @@ function calculateCarpet(){
  const room=field('carpetMode').value==='room';field('carpetLengthFields').hidden=room;field('carpetRoomFields').hidden=!room;
  for(const id of ['carpetLength','carpetQuantity'])field(id).disabled=room;
  for(const id of ['carpetRoomLength','carpetRoomWidth'])field(id).disabled=!room;
- field('carpetDirection').textContent=room?'Karpet dihitung memanjang searah panjang ruangan, dengan jumlah baris yang cukup untuk menutup lebarnya. Sesuaikan arah pemasangan dengan shaf salat.':'Satu baris karpet berarti satu potongan yang dibentangkan memanjang. Contoh: 4 potongan sepanjang 8 m = isi panjang 8 dan jumlah baris 4.';
+ field('carpetDirection').textContent=room?'Panjang mengikuti arah shaf; jumlah baris menutup lebar ruangan.':'Contoh: 4 potongan × 8 m → panjang 8, jumlah baris 4.';
  try{
   const q=service.calculate({product:field('carpetProduct').value,mode:field('carpetMode').value,length:field('carpetLength').valueAsNumber,quantity:field('carpetQuantity').valueAsNumber,roomLength:field('carpetRoomLength').valueAsNumber,roomWidth:field('carpetRoomWidth').valueAsNumber,overlock:field('carpetOverlock').valueAsNumber,seams:field('carpetSeams').valueAsNumber,pillars:field('carpetPillars').valueAsNumber,delivery:field('carpetDelivery').value});
   latestCarpetQuote=q;field('carpetError').hidden=true;field('carpetAdvice').hidden=!q.advice.cutWidthCm;field('carpetAdvice').textContent=q.advice.cutWidthCm?'Baris terakhir: potong lebar '+q.product.width+' → '+fmt(q.advice.lastRowWidthCm)+' cm. Obras opsional.':'';field('carpetRate').textContent='Tinggi '+q.product.width+' cm · '+rupiah(q.product.rate)+' per meter panjang';field('carpetVariant').textContent=q.product.name+' · Tinggi '+q.product.width+' cm';
   const rows=[['Kebutuhan',q.strips+' baris × '+fmt(q.length)+' m'],['Total panjang',fmt(q.meters)+' meter'],['Subtotal karpet',rupiah(q.subtotal)],['Obras ('+q.order.overlock+' lokasi)',rupiah(q.overlockCost)],['Sambung ('+q.order.seams+' sambungan)',rupiah(q.seamCost)],['Lubang / tiang ('+q.order.pillars+' × Rp50.000)',rupiah(q.pillarCost)],['Pengiriman',q.shippingCost===null?'Hubungi WhatsApp':q.order.delivery==='pickup'?'Ambil di toko':rupiah(q.shippingCost)+' · radius <10 km']];
   field('carpetDetails').replaceChildren();for(const [label,value] of rows){const row=document.createElement('div');const dt=document.createElement('dt');const dd=document.createElement('dd');dt.textContent=label;dd.textContent=value;row.append(dt,dd);field('carpetDetails').append(row);}
-  field('carpetTotalLabel').textContent=q.total===null?'Estimasi belum termasuk ongkir':'Estimasi total';field('carpetTotal').textContent=rupiah(q.knownTotal);field('carpetWords').textContent=toWords(q.knownTotal);field('carpetPending').textContent=q.total===null?'Ongkir belum termasuk. Hubungi toko untuk tarif tujuan Anda.':'';
+  field('carpetTotalLabel').textContent=q.total===null?'Estimasi belum termasuk ongkir':'Estimasi total';field('carpetTotal').textContent=rupiah(q.knownTotal);field('carpetWords').textContent=toWords(q.knownTotal);field('carpetPending').textContent=q.total===null?'Belum termasuk ongkir.':'';
   const message=['Assalamu’alaikum, saya ingin pesan karpet sajadah.','',q.product.name+' · Tinggi '+q.product.width+' cm','Harga: '+rupiah(q.product.rate)+'/meter panjang',...rows.map(([label,value])=>label+': '+value),'',(q.total===null?'Estimasi belum termasuk ongkir: ':'Estimasi total: ')+rupiah(q.knownTotal),'Mohon cek stok, ukuran, titik pengerjaan, dan biaya pengiriman.'].join('\n');
   field('carpetWhatsapp').href='https://wa.me/6285105016189?text='+encodeURIComponent(message);field('carpetWhatsapp').removeAttribute('aria-disabled');
  }catch(error){latestCarpetQuote=null;field('carpetAdvice').hidden=true;field('carpetError').hidden=false;field('carpetError').textContent=error.message;field('carpetTotal').textContent='Periksa isian';field('carpetWords').textContent='Perbaiki isian untuk melihat estimasi terbaru.';field('carpetDetails').replaceChildren();field('carpetWhatsapp').removeAttribute('href');field('carpetWhatsapp').setAttribute('aria-disabled','true');}
@@ -517,22 +517,32 @@ class OrderCart{
  }
 }
 
+// Dibantu AI: simpan pilihan saja, harga dihitung ulang saat pemulihan.
+
+class CartStorage{
+ constructor(storage,now=()=>Date.now()){this.storage=storage;this.now=now;this.key='santriCart.v1';this.maxAge=7*24*60*60*1000;}
+ save(cart){try{const keys=['product','mode','width','color','length','quantity','roomWidth','roomLength','writing','trim','packing','cargoService','overlock','seams','pillars'];const items=cart.items.map(item=>({kind:item.kind,order:Object.fromEntries(keys.filter(k=>Object.hasOwn(item.order,k)).map(k=>[k,item.order[k]]))}));this.storage.setItem(this.key,JSON.stringify({version:1,updatedAt:this.now(),items}));return true;}catch{return false;}}
+ load(){const cart=new OrderCart();try{const raw=this.storage.getItem(this.key);if(!raw)return {cart,status:'empty'};if(raw.length>100000)throw Error('size');const data=JSON.parse(raw);if(data.version!==1||!Number.isFinite(data.updatedAt)||data.updatedAt>this.now()||!Array.isArray(data.items)||data.items.length>50)throw Error('format');if(this.now()-data.updatedAt>this.maxAge){this.storage.removeItem(this.key);return {cart,status:'expired'};}for(const item of data.items)cart.add(item.kind,item.order);return {cart,status:cart.items.length?'restored':'empty'};}catch{return {cart:new OrderCart(),status:'unavailable'};}}
+}
+
 // Dibantu AI: keranjang lokal tanpa mengirim data ke server.
 {
- const cart=new OrderCart();let editId=null;const el=id=>document.getElementById(id);const fmt=n=>n.toLocaleString('id-ID',{maximumFractionDigits:2});
+ let browserStorage;try{browserStorage=window.localStorage;}catch{}
+ const persistence=new CartStorage(browserStorage);const restored=persistence.load();const cart=restored.cart;let editId=null;const el=id=>document.getElementById(id);const fmt=n=>n.toLocaleString('id-ID',{maximumFractionDigits:2});
+ function persist(){el('cartStorageNote').textContent=persistence.save(cart)?'Keranjang tersimpan otomatis.':'Browser tidak dapat menyimpan keranjang. Jangan tutup halaman sebelum menyalin atau mengirim rincian lewat WhatsApp.';}
  function describe(item){const q=item.quote;return item.kind==='tikar'?'Tikar rol '+q.order.width+' cm · '+colorNames[q.order.color]+' · '+(q.order.writing?'Dengan tulisan':'Tanpa tulisan'):q.product.name+' · '+q.product.width+' cm';}
  function detail(item){const q=item.quote;return q.strips+' '+(item.kind==='tikar'?'rol':'baris')+' × '+fmt(q.meters/q.strips)+' m = '+fmt(q.meters)+' m';}
  function extras(item){const q=item.quote;return item.kind==='tikar'?'Plisir '+rupiah(q.trimCost)+' · Packing '+(q.packingCost===null?'menunggu kapasitas karung':rupiah(q.packingCost)):'Obras '+q.order.overlock+' lokasi: '+rupiah(q.overlockCost)+' · Sambung '+q.order.seams+': '+rupiah(q.seamCost)+' · Lubang/tiang '+q.order.pillars+': '+rupiah(q.pillarCost);}
  function clearManualShipping(){if(el('cartDelivery').value==='manual'){el('cartDelivery').value='quote';el('cartCost').value='';}}
  function resetEdit(){editId=null;el('cartCancel').hidden=true;document.querySelectorAll('[data-cart-add]').forEach(b=>b.textContent='Tambah ke keranjang');}
  function render(){
-  el('cartCount').textContent=cart.items.length+' item';el('cartJump').textContent='Lihat keranjang ('+cart.items.length+')';el('cartEmpty').hidden=!!cart.items.length;el('cartCheckout').hidden=!cart.items.length;
+  el('cartClear').disabled=!cart.items.length;el('cartClear').hidden=!cart.items.length;el('cartStorageNote').hidden=!cart.items.length;el('cartCount').textContent=cart.items.length+' item';el('cartJump').textContent='Lihat keranjang ('+cart.items.length+')';el('cartEmpty').hidden=!!cart.items.length;el('cartCheckout').hidden=!cart.items.length;
   const mixed=cart.items.some(i=>i.kind==='tikar');el('cartLocal').disabled=mixed;if(mixed&&el('cartDelivery').value==='local')el('cartDelivery').value='quote';
   for(const id of ['whatsapp','carpetWhatsapp'])el(id).hidden=cart.items.length>0;
   el('cartItems').replaceChildren();
   for(const item of cart.items){const row=document.createElement('article');const heading=document.createElement('h3');heading.textContent=describe(item);row.append(heading);for(const text of [detail(item),'Produk '+rupiah(item.quote.subtotal)+' · '+rupiah(item.quote.rate??item.quote.product.rate)+'/m',extras(item)]){const p=document.createElement('p');p.textContent=text;row.append(p);}
    const edit=document.createElement('button');edit.type='button';edit.textContent='Ubah';edit.setAttribute('aria-label','Ubah '+describe(item));edit.addEventListener('click',()=>{editId=item.id;el('cartCancel').hidden=false;document.dispatchEvent(new CustomEvent('santri:edit',{detail:item}));document.querySelectorAll('[data-cart-add]').forEach(b=>b.textContent='Simpan perubahan item');});
-   const remove=document.createElement('button');remove.type='button';remove.textContent='Hapus';remove.setAttribute('aria-label','Hapus '+describe(item));remove.addEventListener('click',()=>{cart.remove(item.id);clearManualShipping();if(editId===item.id)resetEdit();render();el('cartStatus').textContent='Item dihapus.';el('cartMore').focus();});row.append(edit,remove);el('cartItems').append(row);
+   const remove=document.createElement('button');remove.type='button';remove.textContent='Hapus';remove.setAttribute('aria-label','Hapus '+describe(item));remove.addEventListener('click',()=>{cart.remove(item.id);persist();clearManualShipping();if(editId===item.id)resetEdit();render();el('cartStatus').textContent='Item dihapus.';el('cartMore').focus();});row.append(edit,remove);el('cartItems').append(row);
   }
   el('cartCostField').hidden=el('cartDelivery').value!=='manual';el('cartWhatsapp').removeAttribute('href');
   try{const q=cart.quote(el('cartDelivery').value,el('cartCost').value===''?null:el('cartCost').valueAsNumber);el('cartSummary').replaceChildren();
@@ -543,8 +553,15 @@ class OrderCart{
    if(cart.items.length)el('cartWhatsapp').href='https://wa.me/6285105016189?text='+encodeURIComponent(msg);el('cartWhatsapp').setAttribute('aria-disabled',String(!cart.items.length));
   }catch(e){el('cartTotal').textContent='Periksa ongkir';el('cartWords').textContent='';el('cartPending').textContent=e.message;el('cartWhatsapp').setAttribute('aria-disabled','true');}
  }
- document.addEventListener('santri:add',event=>{try{const {kind,order}=event.detail;if(editId!==null)cart.replace(editId,kind,order);else cart.add(kind,order);clearManualShipping();resetEdit();render();el('cartStatus').textContent='Item tersimpan. Tambah produk lain atau lanjut pesan semua.';el('santriCart').scrollIntoView({behavior:'smooth',block:'start'});el('santriCart').focus({preventScroll:true});}catch(e){el('cartStatus').textContent=e.message;el('cartStatus').scrollIntoView({block:'center'});}});
+ document.addEventListener('santri:add',event=>{try{const {kind,order}=event.detail;if(editId!==null)cart.replace(editId,kind,order);else cart.add(kind,order);persist();clearManualShipping();resetEdit();render();el('cartStatus').textContent='Item ditambahkan.';el('santriCart').scrollIntoView({behavior:'smooth',block:'start'});el('santriCart').focus({preventScroll:true});}catch(e){el('cartStatus').textContent=e.message;el('cartStatus').scrollIntoView({block:'center'});}});
  el('cartJump').addEventListener('click',()=>{el('santriCart').scrollIntoView({behavior:'smooth',block:'start'});el('santriCart').focus({preventScroll:true});});
- el('cartMore').addEventListener('click',()=>{resetEdit();document.querySelector('.santriProductPicker').scrollIntoView({behavior:'smooth',block:'start'});document.querySelector('[data-calculator]').focus({preventScroll:true});});el('cartCancel').addEventListener('click',()=>{resetEdit();el('cartStatus').textContent='Perubahan dibatalkan. Item lama tetap tersimpan.';});
+ el('cartMore').addEventListener('click',()=>{resetEdit();document.querySelector('.santriProductPicker').scrollIntoView({behavior:'smooth',block:'start'});document.querySelector('[data-calculator]').focus({preventScroll:true});});el('cartCancel').addEventListener('click',()=>{resetEdit();el('cartStatus').textContent='Perubahan dibatalkan.';});
+ el('cartClear').addEventListener('click',()=>{el('cartClearDialog').showModal();el('cartKeep').focus();});
+ el('cartKeep').addEventListener('click',()=>el('cartClearDialog').close());
+ el('cartClearConfirm').addEventListener('click',()=>{cart.items=[];resetEdit();el('cartDelivery').value='quote';el('cartCost').value='';persist();render();el('cartClearDialog').close();el('cartStatus').textContent='Keranjang dikosongkan.';el('cartMore').focus();});
+ el('cartClearDialog').addEventListener('close',()=>{if(cart.items.length)el('cartClear').focus();});
+ if(restored.status==='restored')el('cartStatus').textContent='Keranjang dipulihkan. Harga diperbarui; pilih kembali pengiriman.';
+ if(restored.status==='expired')el('cartStatus').textContent='Keranjang sebelumnya sudah melewati masa simpan 7 hari. Silakan mulai pesanan baru.';
+ if(restored.status==='unavailable')el('cartStorageNote').textContent='Keranjang sebelumnya tidak dapat dipulihkan. Anda tetap bisa menghitung dan membuat pesanan baru.';
  el('cartDelivery').addEventListener('change',render);el('cartCost').addEventListener('input',render);render();
 }

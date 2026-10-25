@@ -56,3 +56,9 @@ Keranjang campuran tikar/karpet, snapshot order per item, tambah/ubah/hapus, ong
 Karpet dikelompokkan menurut tinggi 105/115/120 cm, dengan enam foto teridentifikasi dari katalog situs: Mecca, Rajakhan, Kingdom, Almira, Dinasty, Medina Pilar. Jenis lain ditandai foto belum tersedia. Foto katalog bersifat contoh motif; stok mengikuti toko.
 
 Validasi: 98 tes lulus; uji browser tambah 40×6 dan 40×4, gabung karpet, ubah tanpa duplikasi, hapus, pesan WA tanpa mengirim, reset ongkir manual. Terbit pada halaman 2131, kalkulator-produk.
+
+## Pemulihan Keranjang — 25 Oktober 2026
+
+Keranjang kini memakai localStorage selama 7 hari sejak perubahan item terakhir. Reload berulang tidak memperpanjang masa simpan. Hanya konfigurasi produk/jasa yang disimpan; harga dihitung ulang, ongkir dipilih kembali. Klik WhatsApp tidak memanggil penghapusan. Tombol Kosongkan keranjang membuka dialog dengan fokus awal Batal; konfirmasi menyimpan snapshot kosong. Penyimpanan gagal menampilkan informasi agar pengguna tidak mengandalkan pemulihan.
+
+102 tes lulus. Browser: dua kali reload mempertahankan 40 rol × 6 m; batal mempertahankan item; konfirmasi mengosongkan dan tetap kosong setelah reload. Foto bukti: konfirmasi-kosongkan.png. Revisi WordPress 2151.
