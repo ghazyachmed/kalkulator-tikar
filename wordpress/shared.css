@@ -28,3 +28,5 @@
  #santriCalculator .heroChatButton,#santriCarpet #carpetOpenChat{width:100%}
  #santriCalculator .totalArea strong,#santriCarpet .carpetTotal strong{font-size:32px}
 }
+
+#santriCarpet label .serviceRate{display:block;white-space:nowrap;font-size:14px;font-weight:400;line-height:1.6;margin-top:4px}

@@ -13,7 +13,7 @@ export class CarpetQuoteService{
     const strips=order.mode==='room'?Math.ceil(number(order.roomWidth,'Lebar ruangan',0.01,1000)*100/product.width):number(order.quantity,'Jumlah baris karpet',1,10000,true);
     const meters=Math.round(length*strips*100)/100;
     const subtotal=Math.round(meters*product.rate);
-    const overlockCost=number(order.overlock,'Titik obras',0,10000,true)*10000;
+    const overlockCost=number(order.overlock,'Jumlah lokasi obras',0,10000,true)*10000;
     const seamCost=number(order.seams,'Jumlah sambungan',0,10000,true)*30000;
     const pillarCost=number(order.pillars,'Jumlah lubang / tiang',0,10000,true)*50000;
     const shippingCost=order.delivery==='pickup'?0:order.delivery==='local'?100000:null;
