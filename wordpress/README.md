@@ -48,3 +48,11 @@ Acuan radius pengiriman diganti menjadi JJ Warehouse, Jl. Galuh I No. 3, Banyuan
 Blok “Saran potong & pemasangan” dihapus dari UI dan balasan chat. Jika ada kelebihan lebar, hanya satu baris ukuran potong ditampilkan. Jumlah jasa tetap input pelanggan karena aturan konversi sisi menjadi titik belum ditetapkan pemilik. 94 pengujian lulus, termasuk lokasi yang berada dalam radius gudang tetapi di luar radius cabang lama.
 
 Tarif lubang/tiang dikonfirmasi pemilik 25 Oktober: jumlah lubang/tiang × Rp50.000 (3 = Rp150.000), satu lubang untuk satu tiang dihitung satu kali. Label `/titik` untuk jasa ini diganti di formulir, ringkasan, WhatsApp, dan chatbot. Satuan obras tidak diubah.
+
+## Keranjang — 25 Oktober 2026
+
+Keranjang campuran tikar/karpet, snapshot order per item, tambah/ubah/hapus, ongkir tunggal dan satu pesan WhatsApp. Harga dihitung dengan service masing-masing produk. Ongkir manual dihapus saat isi berubah. Tarif lokal karpet tidak otomatis berlaku untuk pesanan campuran. Packing per item; panjang tanpa kapasitas karung yang diketahui tetap pending. Keranjang hanya dalam memori halaman, tanpa DB atau penyimpanan data pelanggan.
+
+Karpet dikelompokkan menurut tinggi 105/115/120 cm, dengan enam foto teridentifikasi dari katalog situs: Mecca, Rajakhan, Kingdom, Almira, Dinasty, Medina Pilar. Jenis lain ditandai foto belum tersedia. Foto katalog bersifat contoh motif; stok mengikuti toko.
+
+Validasi: 98 tes lulus; uji browser tambah 40×6 dan 40×4, gabung karpet, ubah tanpa duplikasi, hapus, pesan WA tanpa mengirim, reset ongkir manual. Terbit pada halaman 2131, kalkulator-produk.

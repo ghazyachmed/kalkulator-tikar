@@ -288,6 +288,8 @@ select('closeChat').addEventListener('click',()=>chatDialog.close());chatDialog.
 select('chatInput').addEventListener('keydown',event=>{if(event.key==='Enter'&&!event.shiftKey&&!event.isComposing){event.preventDefault();select('chatForm').requestSubmit();}});
 
 
+select('matCartAdd').addEventListener('click',()=>{update();if(valid)document.dispatchEvent(new CustomEvent('santri:add',{detail:{kind:'tikar',order:currentQuote.order}}));});
+document.addEventListener('santri:edit',event=>{if(event.detail.kind!=='tikar')return;order={...event.detail.order};syncFields();update();document.querySelector('[data-calculator="tikar"]').click();select('quoteForm').scrollIntoView({behavior:'smooth',block:'start'});});
 // Dibantu AI: tarif dari daftar harga pemilik tahun 2026.
 const carpetCatalog=Object.freeze([
   ['raudhah','Raudhah',120,710000],['alNima','Al Nima',120,610000],['alImam','Al Imam',120,470000],['alNamaz','Al Namaz',120,390000],['mecca','Mecca',120,350000],['maulana','Maulana',120,260000],['rajakhan','Rajakhan',120,260000],['kingdom','Kingdom',120,205000],['alQuds','Al Quds',120,200000],['almira','Almira',120,180000],['dinasty','Dinasty',120,170000],['medina115','Medina 115',115,130000],['medina105','Medina 105',105,120000],['medinaGambar','Medina Gambar / Masjid',105,67000],['medinaPilar','Medina Pilar',105,67000]
@@ -364,7 +366,26 @@ const service=new CarpetQuoteService();let latestCarpetQuote;const carpetAssista
 const fmt=value=>value.toLocaleString('id-ID',{maximumFractionDigits:2});
 for(const product of carpetCatalog){const option=document.createElement('option');option.value=product.id;option.textContent=product.name+' · '+product.width+' cm · '+rupiah(product.rate)+'/m';field('carpetProduct').append(option);const row=document.createElement('tr');for(const text of [product.name,product.width+' cm',rupiah(product.rate)]){const cell=document.createElement('td');cell.textContent=text;row.append(cell);}field('carpetPriceRows').append(row);}
 field('carpetProduct').value='medina105';
+const carpetPhotos={mecca:'2018/11/MECCA-DUA-STRIP-HIJAU-225x300.jpg',dinasty:'2018/11/Dinasty-merah-hij-toko-225x300.jpg',kingdom:'2018/11/KINGDOM-HIJAU-225x300.jpg',almira:'2018/11/KARPET-ALMIRA-MERAH-221x300.jpg',rajakhan:'2018/11/RAJAKHAN-Y-1-S-203x300.jpg',medinaPilar:'2018/11/MEDENA-PILAR-MERAH-225x300.jpeg'};
+let lastCarpetChoice='';
+function showCarpetChoices(){
+ if(lastCarpetChoice===field('carpetProduct').value)return;lastCarpetChoice=field('carpetProduct').value;
+ const chosen=carpetCatalog.find(p=>p.id===field('carpetProduct').value);field('carpetHeight').value=chosen.width;
+ field('carpetChoices').replaceChildren();
+ for(const product of carpetCatalog.filter(p=>p.width===chosen.width)){
+ const b=document.createElement('button');b.type='button';b.setAttribute('aria-pressed',String(product.id===chosen.id));
+ if(carpetPhotos[product.id]){const img=document.createElement('img');img.src='https://tokosantri.co.id/wp-content/uploads/'+carpetPhotos[product.id];img.alt='Contoh motif '+product.name;img.width=180;img.height=130;img.loading='lazy';img.addEventListener('error',()=>{const missing=document.createElement('span');missing.className='photoMissing';missing.textContent='Foto belum tersedia';img.replaceWith(missing);},{once:true});b.append(img);}else{const missing=document.createElement('span');missing.className='photoMissing';missing.textContent='Foto belum tersedia';b.append(missing);}
+ for(const text of [product.name,rupiah(product.rate)+'/m']){const span=document.createElement('span');span.textContent=text;b.append(span);}
+ b.addEventListener('click',()=>{field('carpetProduct').value=product.id;calculateCarpet();});field('carpetChoices').append(b);
+ }
+ for(const option of field('carpetProduct').options){option.hidden=carpetCatalog.find(p=>p.id===option.value).width!==chosen.width;}
+}
+field('carpetHeight').addEventListener('change',()=>{field('carpetProduct').value=carpetCatalog.find(p=>p.width===Number(field('carpetHeight').value)).id;calculateCarpet();});
+field('carpetCartAdd').addEventListener('click',()=>{calculateCarpet();if(latestCarpetQuote)document.dispatchEvent(new CustomEvent('santri:add',{detail:{kind:'carpet',order:latestCarpetQuote.order}}));});
+document.addEventListener('santri:edit',event=>{if(event.detail.kind!=='carpet')return;const o=event.detail.order;for(const [key,id] of Object.entries({product:'carpetProduct',mode:'carpetMode',length:'carpetLength',quantity:'carpetQuantity',roomLength:'carpetRoomLength',roomWidth:'carpetRoomWidth',overlock:'carpetOverlock',seams:'carpetSeams',pillars:'carpetPillars',delivery:'carpetDelivery'}))field(id).value=o[key];calculateCarpet();document.querySelector('[data-calculator="carpet"]').click();field('carpetForm').scrollIntoView({behavior:'smooth',block:'start'});});
+
 function calculateCarpet(){
+ showCarpetChoices();
  const room=field('carpetMode').value==='room';field('carpetLengthFields').hidden=room;field('carpetRoomFields').hidden=!room;
  for(const id of ['carpetLength','carpetQuantity'])field(id).disabled=room;
  for(const id of ['carpetRoomLength','carpetRoomWidth'])field(id).disabled=!room;
@@ -379,7 +400,7 @@ function calculateCarpet(){
   field('carpetWhatsapp').href='https://wa.me/6285105016189?text='+encodeURIComponent(message);field('carpetWhatsapp').removeAttribute('aria-disabled');
  }catch(error){latestCarpetQuote=null;field('carpetAdvice').hidden=true;field('carpetError').hidden=false;field('carpetError').textContent=error.message;field('carpetTotal').textContent='Periksa isian';field('carpetWords').textContent='Perbaiki isian untuk melihat estimasi terbaru.';field('carpetDetails').replaceChildren();field('carpetWhatsapp').removeAttribute('href');field('carpetWhatsapp').setAttribute('aria-disabled','true');}
 }
-field('carpetForm').addEventListener('submit',event=>event.preventDefault());field('carpetForm').addEventListener('input',calculateCarpet);field('carpetForm').addEventListener('change',calculateCarpet);
+field('carpetForm').addEventListener('submit',event=>event.preventDefault());field('carpetForm').addEventListener('input',event=>{if(event.target.id!=='carpetHeight')calculateCarpet();});field('carpetForm').addEventListener('change',calculateCarpet);
 field('carpetShowResult').addEventListener('click',()=>{const target=field('carpetError').hidden?field('carpetResult'):field('carpetError');target.scrollIntoView({behavior:'smooth',block:'start'});target.focus({preventScroll:true});});
 for(const button of document.querySelectorAll('[data-calculator]'))button.addEventListener('click',()=>{const carpet=button.dataset.calculator==='carpet';document.getElementById('santriChooseHint').hidden=true;document.getElementById('santriCalculator').hidden=carpet;carpetRoot.hidden=!carpet;for(const choice of document.querySelectorAll('[data-calculator]'))choice.setAttribute('aria-pressed',String(choice===button));});
 calculateCarpet();
@@ -468,4 +489,62 @@ const storeLocations=Object.freeze([
    get('carpetLocationStatus').textContent+=' Ongkir lokal Rp100.000 sudah ditambahkan ke estimasi.';get('carpetUseLocal').hidden=true;
   });
  }
+}
+
+// Dibantu AI: keranjang menghitung ulang harga, ongkir hanya sekali.
+
+
+class OrderCart{
+ constructor(){this.items=[];this.nextId=1;}
+ line(kind,input){
+  if(!['tikar','carpet'].includes(kind))throw Error('Produk tidak tersedia.');
+  const quote=kind==='tikar'?new QuoteService().calculate({...input,shipping:'pickup',shippingCost:null}):new CarpetQuoteService().calculate({...input,delivery:'pickup'});
+  return {kind,order:quote.order,quote};
+ }
+ add(kind,input){if(this.items.length>=50)throw Error('Maksimal 50 rincian dalam satu pesanan.');const line=this.line(kind,input);const id=this.nextId++;this.items.push({id,...line});return id;}
+ replace(id,kind,input){const index=this.items.findIndex(item=>item.id===id);if(index<0)throw Error('Rincian tidak ditemukan.');this.items[index]={id,...this.line(kind,input)};}
+ remove(id){this.items=this.items.filter(item=>item.id!==id);}
+ quote(delivery='quote',cost=null){
+  if(!['pickup','local','quote','manual'].includes(delivery))throw Error('Pilih pengiriman.');
+  if(delivery==='local'&&this.items.some(item=>item.kind!=='carpet'))throw Error('Tarif lokal ini khusus karpet. Ongkir pesanan campuran perlu tarif toko.');
+  if(delivery==='manual'&&(!Number.isSafeInteger(cost)||cost<0||cost>100000000))throw Error('Isi tarif ongkir yang valid.');
+  let goods=0,services=0,packing=0,meters=0;const pending=[];
+  for(const [index,item] of this.items.entries()){const q=item.quote;goods+=q.subtotal;meters+=q.meters;services+=item.kind==='tikar'?q.trimCost??0:q.overlockCost+q.seamCost+q.pillarCost;packing+=q.packingCost??0;for(const p of q.pending)pending.push('Item '+(index+1)+': '+p);}
+  const shipping=delivery==='pickup'?0:delivery==='local'?100000:delivery==='manual'?cost:null;
+  if(shipping===null)pending.push('Ongkir seluruh pesanan');
+  const knownTotal=goods+services+packing+(shipping??0);
+  return {goods,services,packing,meters:Math.round(meters*100)/100,shipping,knownTotal,total:pending.length?null:knownTotal,pending};
+ }
+}
+
+// Dibantu AI: keranjang lokal tanpa mengirim data ke server.
+{
+ const cart=new OrderCart();let editId=null;const el=id=>document.getElementById(id);const fmt=n=>n.toLocaleString('id-ID',{maximumFractionDigits:2});
+ function describe(item){const q=item.quote;return item.kind==='tikar'?'Tikar rol '+q.order.width+' cm · '+colorNames[q.order.color]+' · '+(q.order.writing?'Dengan tulisan':'Tanpa tulisan'):q.product.name+' · '+q.product.width+' cm';}
+ function detail(item){const q=item.quote;return q.strips+' '+(item.kind==='tikar'?'rol':'baris')+' × '+fmt(q.meters/q.strips)+' m = '+fmt(q.meters)+' m';}
+ function extras(item){const q=item.quote;return item.kind==='tikar'?'Plisir '+rupiah(q.trimCost)+' · Packing '+(q.packingCost===null?'menunggu kapasitas karung':rupiah(q.packingCost)):'Obras '+q.order.overlock+' lokasi: '+rupiah(q.overlockCost)+' · Sambung '+q.order.seams+': '+rupiah(q.seamCost)+' · Lubang/tiang '+q.order.pillars+': '+rupiah(q.pillarCost);}
+ function clearManualShipping(){if(el('cartDelivery').value==='manual'){el('cartDelivery').value='quote';el('cartCost').value='';}}
+ function resetEdit(){editId=null;el('cartCancel').hidden=true;document.querySelectorAll('[data-cart-add]').forEach(b=>b.textContent='Tambah ke keranjang');}
+ function render(){
+  el('cartCount').textContent=cart.items.length+' item';el('cartJump').textContent='Lihat keranjang ('+cart.items.length+')';el('cartEmpty').hidden=!!cart.items.length;el('cartCheckout').hidden=!cart.items.length;
+  const mixed=cart.items.some(i=>i.kind==='tikar');el('cartLocal').disabled=mixed;if(mixed&&el('cartDelivery').value==='local')el('cartDelivery').value='quote';
+  for(const id of ['whatsapp','carpetWhatsapp'])el(id).hidden=cart.items.length>0;
+  el('cartItems').replaceChildren();
+  for(const item of cart.items){const row=document.createElement('article');const heading=document.createElement('h3');heading.textContent=describe(item);row.append(heading);for(const text of [detail(item),'Produk '+rupiah(item.quote.subtotal)+' · '+rupiah(item.quote.rate??item.quote.product.rate)+'/m',extras(item)]){const p=document.createElement('p');p.textContent=text;row.append(p);}
+   const edit=document.createElement('button');edit.type='button';edit.textContent='Ubah';edit.setAttribute('aria-label','Ubah '+describe(item));edit.addEventListener('click',()=>{editId=item.id;el('cartCancel').hidden=false;document.dispatchEvent(new CustomEvent('santri:edit',{detail:item}));document.querySelectorAll('[data-cart-add]').forEach(b=>b.textContent='Simpan perubahan item');});
+   const remove=document.createElement('button');remove.type='button';remove.textContent='Hapus';remove.setAttribute('aria-label','Hapus '+describe(item));remove.addEventListener('click',()=>{cart.remove(item.id);clearManualShipping();if(editId===item.id)resetEdit();render();el('cartStatus').textContent='Item dihapus.';el('cartMore').focus();});row.append(edit,remove);el('cartItems').append(row);
+  }
+  el('cartCostField').hidden=el('cartDelivery').value!=='manual';el('cartWhatsapp').removeAttribute('href');
+  try{const q=cart.quote(el('cartDelivery').value,el('cartCost').value===''?null:el('cartCost').valueAsNumber);el('cartSummary').replaceChildren();
+   const rows=[['Subtotal produk',q.goods],['Jahit & pengerjaan',q.services],['Packing',q.packing],['Ongkir seluruh pesanan',q.shipping]];
+   for(const [label,value] of rows){const div=document.createElement('div');const dt=document.createElement('dt');dt.textContent=label;const dd=document.createElement('dd');dd.textContent=value===null?'Menunggu tarif':rupiah(value);div.append(dt,dd);el('cartSummary').append(div);}
+   el('cartTotal').textContent=(q.total===null?'Biaya diketahui: ':'Estimasi total: ')+rupiah(q.knownTotal);el('cartWords').textContent=toWords(q.knownTotal);el('cartPending').textContent=q.pending.length?'Belum termasuk: '+q.pending.join('; ')+'.':'';
+   const msg=['Assalamu’alaikum, mohon konfirmasi pesanan berikut.','',...cart.items.flatMap((item,i)=>[(i+1)+'. '+describe(item),detail(item),'Harga '+rupiah(item.quote.rate??item.quote.product.rate)+'/m; produk '+rupiah(item.quote.subtotal),extras(item),'']),...rows.map(([k,v])=>k+': '+(v===null?'Menunggu tarif':rupiah(v))),el('cartTotal').textContent,el('cartWords').textContent,el('cartPending').textContent,'Pengiriman: '+el('cartDelivery').selectedOptions[0].textContent,'Mohon cek stok, pengerjaan, packing, alamat tujuan dan total akhir.'].filter(Boolean).join('\n');
+   if(cart.items.length)el('cartWhatsapp').href='https://wa.me/6285105016189?text='+encodeURIComponent(msg);el('cartWhatsapp').setAttribute('aria-disabled',String(!cart.items.length));
+  }catch(e){el('cartTotal').textContent='Periksa ongkir';el('cartWords').textContent='';el('cartPending').textContent=e.message;el('cartWhatsapp').setAttribute('aria-disabled','true');}
+ }
+ document.addEventListener('santri:add',event=>{try{const {kind,order}=event.detail;if(editId!==null)cart.replace(editId,kind,order);else cart.add(kind,order);clearManualShipping();resetEdit();render();el('cartStatus').textContent='Item tersimpan. Tambah produk lain atau lanjut pesan semua.';el('santriCart').scrollIntoView({behavior:'smooth',block:'start'});el('santriCart').focus({preventScroll:true});}catch(e){el('cartStatus').textContent=e.message;el('cartStatus').scrollIntoView({block:'center'});}});
+ el('cartJump').addEventListener('click',()=>{el('santriCart').scrollIntoView({behavior:'smooth',block:'start'});el('santriCart').focus({preventScroll:true});});
+ el('cartMore').addEventListener('click',()=>{resetEdit();document.querySelector('.santriProductPicker').scrollIntoView({behavior:'smooth',block:'start'});document.querySelector('[data-calculator]').focus({preventScroll:true});});el('cartCancel').addEventListener('click',()=>{resetEdit();el('cartStatus').textContent='Perubahan dibatalkan. Item lama tetap tersimpan.';});
+ el('cartDelivery').addEventListener('change',render);el('cartCost').addEventListener('input',render);render();
 }
