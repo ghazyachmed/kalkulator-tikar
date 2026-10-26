@@ -536,7 +536,7 @@ class CartStorage{
  function clearManualShipping(){if(el('cartDelivery').value==='manual'){el('cartDelivery').value='quote';el('cartCost').value='';}}
  function resetEdit(){editId=null;el('cartCancel').hidden=true;document.querySelectorAll('[data-cart-add]').forEach(b=>b.textContent='Tambah ke keranjang');}
  function render(){
-  el('cartClear').disabled=!cart.items.length;el('cartClear').hidden=!cart.items.length;el('cartStorageNote').hidden=!cart.items.length;el('cartCount').textContent=cart.items.length+' item';el('cartJump').textContent='Lihat keranjang ('+cart.items.length+')';el('cartEmpty').hidden=!!cart.items.length;el('cartCheckout').hidden=!cart.items.length;
+  el('cartClear').disabled=!cart.items.length;el('cartClear').hidden=!cart.items.length;el('cartStorageNote').hidden=!cart.items.length;el('cartCount').textContent=cart.items.length+' item';el('cartJumpCount').textContent=cart.items.length;el('cartJump').setAttribute('aria-label','Lihat keranjang, '+cart.items.length+' item');el('cartEmpty').hidden=!!cart.items.length;el('cartCheckout').hidden=!cart.items.length;
   const mixed=cart.items.some(i=>i.kind==='tikar');el('cartLocal').disabled=mixed;if(mixed&&el('cartDelivery').value==='local')el('cartDelivery').value='quote';
   for(const id of ['whatsapp','carpetWhatsapp'])el(id).hidden=cart.items.length>0;
   el('cartItems').replaceChildren();
